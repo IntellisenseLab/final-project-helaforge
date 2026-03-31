@@ -1,0 +1,2 @@
+[console_scripts]
+voice_interpreter = voice_control_logic.voice_interpreter:main

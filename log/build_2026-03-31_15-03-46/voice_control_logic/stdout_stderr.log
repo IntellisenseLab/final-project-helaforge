@@ -1,0 +1,19 @@
+running develop
+/usr/lib/python3/dist-packages/setuptools/command/easy_install.py:363: UserWarning: Unbuilt egg for pytest-repeat [unknown version] (/usr/lib/python3/dist-packages)
+  self.local_index = Environment(self.shadow_path + sys.path)
+running egg_info
+writing voice_control_logic.egg-info/PKG-INFO
+writing dependency_links to voice_control_logic.egg-info/dependency_links.txt
+writing entry points to voice_control_logic.egg-info/entry_points.txt
+writing requirements to voice_control_logic.egg-info/requires.txt
+writing top-level names to voice_control_logic.egg-info/top_level.txt
+reading manifest file 'voice_control_logic.egg-info/SOURCES.txt'
+writing manifest file 'voice_control_logic.egg-info/SOURCES.txt'
+running build_ext
+Creating /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice-control-logic.egg-link (link to .)
+Installing voice_interpreter script to /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/lib/voice_control_logic
+
+Installed /home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic
+running symlink_data
+symbolically linking /home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/resource/voice_control_logic -> /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/share/ament_index/resource_index/packages
+symbolically linking /home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/package.xml -> /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/share/voice_control_logic

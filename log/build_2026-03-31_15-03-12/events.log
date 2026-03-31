@@ -1,0 +1,84 @@
+[0.000000] (-) TimerEvent: {}
+[0.000527] (voice_control_logic) JobQueued: {'identifier': 'voice_control_logic', 'dependencies': OrderedDict()}
+[0.000632] (voice_control_logic) JobStarted: {'identifier': 'voice_control_logic'}
+[0.099461] (-) TimerEvent: {}
+[0.200376] (-) TimerEvent: {}
+[0.300695] (-) TimerEvent: {}
+[0.401062] (-) TimerEvent: {}
+[0.501600] (-) TimerEvent: {}
+[0.602438] (-) TimerEvent: {}
+[0.703001] (-) TimerEvent: {}
+[0.803447] (-) TimerEvent: {}
+[0.903960] (-) TimerEvent: {}
+[1.004800] (-) TimerEvent: {}
+[1.105222] (-) TimerEvent: {}
+[1.205653] (-) TimerEvent: {}
+[1.306437] (-) TimerEvent: {}
+[1.407693] (-) TimerEvent: {}
+[1.508740] (-) TimerEvent: {}
+[1.609670] (-) TimerEvent: {}
+[1.710534] (-) TimerEvent: {}
+[1.811453] (-) TimerEvent: {}
+[1.912213] (-) TimerEvent: {}
+[2.013013] (-) TimerEvent: {}
+[2.113948] (-) TimerEvent: {}
+[2.214822] (-) TimerEvent: {}
+[2.315730] (-) TimerEvent: {}
+[2.416652] (-) TimerEvent: {}
+[2.517449] (-) TimerEvent: {}
+[2.618372] (-) TimerEvent: {}
+[2.718962] (-) TimerEvent: {}
+[2.819512] (-) TimerEvent: {}
+[2.920438] (-) TimerEvent: {}
+[3.021339] (-) TimerEvent: {}
+[3.039961] (voice_control_logic) Command: {'cmd': ['/usr/bin/python3', '-W', 'ignore:setup.py install is deprecated', '-W', 'ignore:easy_install command is deprecated', 'setup.py', 'egg_info', '--egg-base', '../../build/voice_control_logic', 'build', '--build-base', '/home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/build', 'install', '--record', '/home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/install.log', '--single-version-externally-managed', 'install_data'], 'cwd': '/home/sudil-minthaka/Documents/final-project-helaforge/src/voice_control_logic', 'env': {'LESSOPEN': '| /usr/bin/lesspipe %s', 'USER': 'sudil-minthaka', 'GZ_CONFIG_PATH': '/opt/ros/jazzy/opt/gz_sim_vendor/share/gz:/opt/ros/jazzy/opt/sdformat_vendor/share/gz:/opt/ros/jazzy/opt/gz_gui_vendor/share/gz:/opt/ros/jazzy/opt/gz_transport_vendor/share/gz:/opt/ros/jazzy/opt/gz_rendering_vendor/share/gz:/opt/ros/jazzy/opt/gz_plugin_vendor/share/gz:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/share/gz:/opt/ros/jazzy/opt/gz_msgs_vendor/share/gz:/opt/ros/jazzy/opt/gz_common_vendor/share/gz', 'XDG_SESSION_TYPE': 'wayland', 'CLUTTER_DISABLE_MIPMAPPED_TEXT': '1', 'SHLVL': '1', 'LD_LIBRARY_PATH': '/home/sudil-minthaka/Documents/lab-02-SudilMin/CS3340-Workspace/install/interfaces/lib:/home/sudil-minthaka/ros2_ws/install/my_robot_interfaces/lib:/home/sudil-minthaka/ros2_ws_actions/install/my_robot_interfaces/lib:/opt/ros/jazzy/opt/gz_sim_vendor/lib:/opt/ros/jazzy/opt/gz_sensors_vendor/lib:/opt/ros/jazzy/opt/gz_physics_vendor/lib:/opt/ros/jazzy/opt/sdformat_vendor/lib:/opt/ros/jazzy/opt/rviz_ogre_vendor/lib:/opt/ros/jazzy/lib/x86_64-linux-gnu:/opt/ros/jazzy/opt/gz_gui_vendor/lib:/opt/ros/jazzy/opt/gz_transport_vendor/lib:/opt/ros/jazzy/opt/gz_rendering_vendor/lib:/opt/ros/jazzy/opt/gz_plugin_vendor/lib:/opt/ros/jazzy/opt/gz_fuel_tools_vendor/lib:/opt/ros/jazzy/opt/gz_msgs_vendor/lib:/opt/ros/jazzy/opt/gz_common_vendor/lib:/opt/ros/jazzy/opt/gz_math_vendor/lib:/opt/ros/jazzy/opt/gz_utils_vendor/lib:/opt/ros/jazzy/opt/gz_tools_vendor/lib:/opt/ros/jazzy/opt/gz_ogre_next_vendor/lib:/opt/ros/jazzy/opt/gz_dartsim_vendor/lib:/opt/ros/jazzy/opt/gz_cmake_vendor/lib:/opt/ros/jazzy/lib', 'HOME': '/home/sudil-minthaka', 'OLDPWD': '/home/sudil-minthaka/Documents/final-project-helaforge/src', 'DESKTOP_SESSION': 'ubuntu', 'ROS_PYTHON_VERSION': '3', 'GNOME_SHELL_SESSION_MODE': 'ubuntu', 'GTK_MODULES': 'gail:atk-bridge', 'SYSTEMD_EXEC_PID': '2748', 'GSM_SKIP_SSH_AGENT_WORKAROUND': 'true', 'DBUS_SESSION_BUS_ADDRESS': 'unix:path=/run/user/1000/bus', 'COLORTERM': 'truecolor', 'DEBUGINFOD_URLS': 'https://debuginfod.ubuntu.com', 'IM_CONFIG_PHASE': '1', 'WAYLAND_DISPLAY': 'wayland-0', 'COLCON_PREFIX_PATH': '/home/sudil-minthaka/kobuki_ws/install:/home/sudil-minthaka/Documents/lab-02-SudilMin/CS3340-Workspace/install:/home/sudil-minthaka/ros2_ws/install:/home/sudil-minthaka/ros2_ws_actions/install:/home/sudil-minthaka/Documents/final-project-helaforge/install', 'ROS_DISTRO': 'jazzy', 'LOGNAME': 'sudil-minthaka', '_': '/usr/bin/colcon', 'ROS_VERSION': '2', 'MEMORY_PRESSURE_WATCH': '/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/session.slice/org.gnome.Shell@wayland.service/memory.pressure', 'XDG_SESSION_CLASS': 'user', 'USERNAME': 'sudil-minthaka', 'TERM': 'xterm-256color', 'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated', 'PATH': '/opt/ros/jazzy/opt/gz_msgs_vendor/bin:/opt/ros/jazzy/opt/gz_tools_vendor/bin:/opt/ros/jazzy/opt/gz_ogre_next_vendor/bin:/opt/ros/jazzy/bin:/home/sudil-minthaka/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin', 'SESSION_MANAGER': 'local/sudil-minthaka-Sword-15-A12UCX:@/tmp/.ICE-unix/2717,unix/sudil-minthaka-Sword-15-A12UCX:/tmp/.ICE-unix/2717', 'XDG_MENU_PREFIX': 'gnome-', 'GNOME_TERMINAL_SCREEN': '/org/gnome/Terminal/screen/e68909b8_dd43_4f07_9aee_2d902c260928', 'GNOME_SETUP_DISPLAY': ':1', 'XDG_RUNTIME_DIR': '/run/user/1000', 'DISPLAY': ':0', 'LANG': 'en_US.UTF-8', 'XDG_CURRENT_DESKTOP': 'ubuntu:GNOME', 'XMODIFIERS': '@im=ibus', 'XDG_SESSION_DESKTOP': 'ubuntu', 'XAUTHORITY': '/run/user/1000/.mutter-Xwaylandauth.ABSOM3', 'LS_COLORS': 'rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:', 'GNOME_TERMINAL_SERVICE': ':1.397', 'SSH_AUTH_SOCK': '/run/user/1000/keyring/ssh', 'AMENT_PREFIX_PATH': '/home/sudil-minthaka/kobuki_ws/install/voice_control_logic:/home/sudil-minthaka/Documents/lab-02-SudilMin/CS3340-Workspace/install/lab_02:/home/sudil-minthaka/Documents/lab-02-SudilMin/CS3340-Workspace/install/interfaces:/home/sudil-minthaka/ros2_ws/install/actions_py:/home/sudil-minthaka/ros2_ws/install/my_robot_interfaces:/home/sudil-minthaka/ros2_ws/install/my_robot_controller:/home/sudil-minthaka/ros2_ws/install/my_robot_bringup:/home/sudil-minthaka/ros2_ws_actions/install/my_robot_interfaces:/opt/ros/jazzy', 'SHELL': '/bin/bash', 'QT_ACCESSIBILITY': '1', 'GDMSESSION': 'ubuntu', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'ROS_AUTOMATIC_DISCOVERY_RANGE': 'SUBNET', 'QT_IM_MODULE': 'ibus', 'PWD': '/home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic', 'LC_ALL': 'en_US.UTF-8', 'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu:/etc/xdg', 'XDG_DATA_DIRS': '/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop', 'PYTHONPATH': '/home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages:/home/sudil-minthaka/kobuki_ws/install/voice_control_logic/lib/python3.12/site-packages:/home/sudil-minthaka/Documents/lab-02-SudilMin/CS3340-Workspace/install/lab_02/lib/python3.12/site-packages:/home/sudil-minthaka/Documents/lab-02-SudilMin/CS3340-Workspace/install/interfaces/lib/python3.12/site-packages:/home/sudil-minthaka/ros2_ws/build/actions_py:/home/sudil-minthaka/ros2_ws/install/actions_py/lib/python3.12/site-packages:/home/sudil-minthaka/ros2_ws/install/my_robot_interfaces/lib/python3.12/site-packages:/home/sudil-minthaka/ros2_ws/install/my_robot_controller/lib/python3.12/site-packages:/home/sudil-minthaka/ros2_ws_actions/install/my_robot_interfaces/lib/python3.12/site-packages:/opt/ros/jazzy/lib/python3.12/site-packages', 'COLCON': '1', 'MEMORY_PRESSURE_WRITE': 'c29tZSAyMDAwMDAgMjAwMDAwMAA=', 'VTE_VERSION': '7600', 'CMAKE_PREFIX_PATH': '/home/sudil-minthaka/Documents/lab-02-SudilMin/CS3340-Workspace/install/interfaces:/home/sudil-minthaka/ros2_ws/install/my_robot_interfaces:/home/sudil-minthaka/ros2_ws/install/my_robot_bringup:/home/sudil-minthaka/ros2_ws_actions/install/my_robot_interfaces:/opt/ros/jazzy/opt/gz_sim_vendor:/opt/ros/jazzy/opt/gz_sensors_vendor:/opt/ros/jazzy/opt/gz_physics_vendor:/opt/ros/jazzy/opt/sdformat_vendor:/opt/ros/jazzy/opt/gz_gui_vendor:/opt/ros/jazzy/opt/gz_transport_vendor:/opt/ros/jazzy/opt/gz_rendering_vendor:/opt/ros/jazzy/opt/gz_plugin_vendor:/opt/ros/jazzy/opt/gz_fuel_tools_vendor:/opt/ros/jazzy/opt/gz_msgs_vendor:/opt/ros/jazzy/opt/gz_common_vendor:/opt/ros/jazzy/opt/gz_math_vendor:/opt/ros/jazzy/opt/gz_utils_vendor:/opt/ros/jazzy/opt/gz_tools_vendor:/opt/ros/jazzy/opt/gz_ogre_next_vendor:/opt/ros/jazzy/opt/gz_dartsim_vendor:/opt/ros/jazzy/opt/gz_cmake_vendor'}, 'shell': False}
+[3.121671] (-) TimerEvent: {}
+[3.222397] (-) TimerEvent: {}
+[3.322803] (-) TimerEvent: {}
+[3.423293] (-) TimerEvent: {}
+[3.524234] (-) TimerEvent: {}
+[3.625015] (-) TimerEvent: {}
+[3.700326] (voice_control_logic) StdoutLine: {'line': b'running egg_info\n'}
+[3.701006] (voice_control_logic) StdoutLine: {'line': b'creating ../../build/voice_control_logic/voice_control_logic.egg-info\n'}
+[3.725206] (-) TimerEvent: {}
+[3.740264] (voice_control_logic) StdoutLine: {'line': b'writing ../../build/voice_control_logic/voice_control_logic.egg-info/PKG-INFO\n'}
+[3.740810] (voice_control_logic) StdoutLine: {'line': b'writing dependency_links to ../../build/voice_control_logic/voice_control_logic.egg-info/dependency_links.txt\n'}
+[3.741062] (voice_control_logic) StdoutLine: {'line': b'writing entry points to ../../build/voice_control_logic/voice_control_logic.egg-info/entry_points.txt\n'}
+[3.741278] (voice_control_logic) StdoutLine: {'line': b'writing requirements to ../../build/voice_control_logic/voice_control_logic.egg-info/requires.txt\n'}
+[3.741482] (voice_control_logic) StdoutLine: {'line': b'writing top-level names to ../../build/voice_control_logic/voice_control_logic.egg-info/top_level.txt\n'}
+[3.741668] (voice_control_logic) StdoutLine: {'line': b"writing manifest file '../../build/voice_control_logic/voice_control_logic.egg-info/SOURCES.txt'\n"}
+[3.825436] (-) TimerEvent: {}
+[3.831731] (voice_control_logic) StdoutLine: {'line': b"reading manifest file '../../build/voice_control_logic/voice_control_logic.egg-info/SOURCES.txt'\n"}
+[3.833359] (voice_control_logic) StdoutLine: {'line': b"writing manifest file '../../build/voice_control_logic/voice_control_logic.egg-info/SOURCES.txt'\n"}
+[3.833850] (voice_control_logic) StdoutLine: {'line': b'running build\n'}
+[3.834248] (voice_control_logic) StdoutLine: {'line': b'running build_py\n'}
+[3.834710] (voice_control_logic) StdoutLine: {'line': b'creating /home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/build\n'}
+[3.835525] (voice_control_logic) StdoutLine: {'line': b'creating /home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/build/lib\n'}
+[3.835882] (voice_control_logic) StdoutLine: {'line': b'creating /home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/build/lib/voice_control_logic\n'}
+[3.836132] (voice_control_logic) StdoutLine: {'line': b'copying voice_control_logic/__init__.py -> /home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/build/lib/voice_control_logic\n'}
+[3.836374] (voice_control_logic) StdoutLine: {'line': b'copying voice_control_logic/voice_interpreter.py -> /home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/build/lib/voice_control_logic\n'}
+[3.836816] (voice_control_logic) StdoutLine: {'line': b'running install\n'}
+[3.851688] (voice_control_logic) StdoutLine: {'line': b'running install_lib\n'}
+[3.896734] (voice_control_logic) StdoutLine: {'line': b'creating /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic\n'}
+[3.897611] (voice_control_logic) StdoutLine: {'line': b'copying /home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/build/lib/voice_control_logic/__init__.py -> /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic\n'}
+[3.897945] (voice_control_logic) StdoutLine: {'line': b'copying /home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/build/lib/voice_control_logic/voice_interpreter.py -> /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic\n'}
+[3.898402] (voice_control_logic) StdoutLine: {'line': b'byte-compiling /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic/__init__.py to __init__.cpython-312.pyc\n'}
+[3.899032] (voice_control_logic) StdoutLine: {'line': b'byte-compiling /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic/voice_interpreter.py to voice_interpreter.cpython-312.pyc\n'}
+[3.901306] (voice_control_logic) StdoutLine: {'line': b'running install_data\n'}
+[3.902133] (voice_control_logic) StdoutLine: {'line': b'creating /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/share/ament_index\n'}
+[3.903125] (voice_control_logic) StdoutLine: {'line': b'creating /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/share/ament_index/resource_index\n'}
+[3.903368] (voice_control_logic) StdoutLine: {'line': b'creating /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/share/ament_index/resource_index/packages\n'}
+[3.903600] (voice_control_logic) StdoutLine: {'line': b'copying resource/voice_control_logic -> /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/share/ament_index/resource_index/packages\n'}
+[3.903766] (voice_control_logic) StdoutLine: {'line': b'copying package.xml -> /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/share/voice_control_logic\n'}
+[3.903918] (voice_control_logic) StdoutLine: {'line': b'running install_egg_info\n'}
+[3.925776] (-) TimerEvent: {}
+[4.008005] (voice_control_logic) StdoutLine: {'line': b'Copying ../../build/voice_control_logic/voice_control_logic.egg-info to /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic-0.0.0-py3.12.egg-info\n'}
+[4.010957] (voice_control_logic) StdoutLine: {'line': b'running install_scripts\n'}
+[4.026056] (-) TimerEvent: {}
+[4.126553] (-) TimerEvent: {}
+[4.184862] (voice_control_logic) StdoutLine: {'line': b'Installing voice_interpreter script to /home/sudil-minthaka/Documents/final-project-helaforge/install/voice_control_logic/lib/voice_control_logic\n'}
+[4.185241] (voice_control_logic) StdoutLine: {'line': b"writing list of installed files to '/home/sudil-minthaka/Documents/final-project-helaforge/build/voice_control_logic/install.log'\n"}
+[4.216350] (voice_control_logic) CommandEnded: {'returncode': 0}
+[4.226747] (-) TimerEvent: {}
+[4.255776] (voice_control_logic) JobEnded: {'identifier': 'voice_control_logic', 'rc': 0}
+[4.258021] (-) EventReactorShutdown: {}
