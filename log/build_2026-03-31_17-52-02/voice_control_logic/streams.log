@@ -1,0 +1,37 @@
+[0.901s] Invoking command in '/media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/src/voice_control_logic': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/voice_control_logic build --build-base /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/build install --record /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/install.log --single-version-externally-managed install_data
+[1.220s] running egg_info
+[1.220s] creating ../../build/voice_control_logic/voice_control_logic.egg-info
+[1.241s] writing ../../build/voice_control_logic/voice_control_logic.egg-info/PKG-INFO
+[1.241s] writing dependency_links to ../../build/voice_control_logic/voice_control_logic.egg-info/dependency_links.txt
+[1.242s] writing entry points to ../../build/voice_control_logic/voice_control_logic.egg-info/entry_points.txt
+[1.242s] writing requirements to ../../build/voice_control_logic/voice_control_logic.egg-info/requires.txt
+[1.242s] writing top-level names to ../../build/voice_control_logic/voice_control_logic.egg-info/top_level.txt
+[1.242s] writing manifest file '../../build/voice_control_logic/voice_control_logic.egg-info/SOURCES.txt'
+[1.280s] reading manifest file '../../build/voice_control_logic/voice_control_logic.egg-info/SOURCES.txt'
+[1.280s] writing manifest file '../../build/voice_control_logic/voice_control_logic.egg-info/SOURCES.txt'
+[1.280s] running build
+[1.281s] running build_py
+[1.281s] creating /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/build
+[1.281s] creating /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/build/lib
+[1.281s] creating /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/build/lib/voice_control_logic
+[1.281s] copying voice_control_logic/voice_interpreter.py -> /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/build/lib/voice_control_logic
+[1.281s] copying voice_control_logic/__init__.py -> /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/build/lib/voice_control_logic
+[1.281s] running install
+[1.286s] running install_lib
+[1.304s] creating /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic
+[1.304s] copying /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/build/lib/voice_control_logic/voice_interpreter.py -> /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic
+[1.305s] copying /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/build/lib/voice_control_logic/__init__.py -> /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic
+[1.305s] byte-compiling /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic/voice_interpreter.py to voice_interpreter.cpython-312.pyc
+[1.306s] byte-compiling /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic/__init__.py to __init__.cpython-312.pyc
+[1.306s] running install_data
+[1.306s] creating /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/share/ament_index
+[1.306s] creating /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/share/ament_index/resource_index
+[1.306s] creating /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/share/ament_index/resource_index/packages
+[1.306s] copying resource/voice_control_logic -> /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/share/ament_index/resource_index/packages
+[1.306s] copying package.xml -> /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/share/voice_control_logic
+[1.307s] running install_egg_info
+[1.323s] Copying ../../build/voice_control_logic/voice_control_logic.egg-info to /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages/voice_control_logic-0.0.0-py3.12.egg-info
+[1.324s] running install_scripts
+[1.418s] Installing voice_interpreter script to /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/lib/voice_control_logic
+[1.418s] writing list of installed files to '/media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/install.log'
+[1.442s] Invoked command in '/media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/src/voice_control_logic' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/install/voice_control_logic/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/voice_control_logic build --build-base /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/build install --record /media/nimsika/New Volume/semester-04/robotic-and-automation/final-project/final-project-helaforge/build/voice_control_logic/install.log --single-version-externally-managed install_data
