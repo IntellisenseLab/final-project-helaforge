@@ -1,1 +1,17 @@
 .vscode
+
+# Python virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# ROS2 Python install artifacts (local)
+install/
+build/
+log/
