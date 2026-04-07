@@ -22,6 +22,7 @@ setup(
     entry_points={
         'console_scripts': [
             'feature_extractor = feature_extractor.feature_extractor_node:main',
+            'feature_extractor_node = feature_extractor.feature_extractor_node:main',
         ],
     },
 )
