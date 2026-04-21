@@ -1,0 +1,32 @@
+# ── ROS 2 Build Artifacts ────────────────────────────────────────────
+build/
+install/
+log/
+
+# ── Python ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+
+# ── YOLO model weights ──────────────────────────────────────────────
+*.pt
+*.onnx
+
+# ── Vosk model (too large for git) ──────────────────────────────────
+vosk-model*/
+
+# ── IDE / Editor ─────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── RViz saved configs (keep the one in config/) ────────────────────
+*.rviz~

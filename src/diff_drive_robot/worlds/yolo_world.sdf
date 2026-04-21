@@ -1,0 +1,116 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="yolo_world">
+
+    <!-- ── Core System Plugins for Gazebo Harmonic ── -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+
+    <!-- ── Lighting ── -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.3 0.3 0.3 1</specular>
+      <direction>-0.5 0.3 -0.9</direction>
+    </light>
+    
+    <light type="point" name="ceiling_light_1">
+      <pose>0 0 3.0 0 0 0</pose>
+      <diffuse>0.8 0.8 0.75 1</diffuse>
+    </light>
+
+    <!-- ── Ground Plane ── -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry></collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+          <material>
+            <ambient>0.65 0.65 0.65 1</ambient>
+            <diffuse>0.65 0.65 0.65 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── Room Walls (10m x 10m) ── -->
+    <model name="indoor_walls">
+      <static>true</static>
+      
+      <!-- North Wall -->
+      <link name="wall_north">
+        <pose>5 0 1.5 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.2 10 3</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>0.2 10 3</size></box></geometry>
+          <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
+        </visual>
+      </link>
+      
+      <!-- South Wall -->
+      <link name="wall_south">
+        <pose>-5 0 1.5 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.2 10 3</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>0.2 10 3</size></box></geometry>
+          <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
+        </visual>
+      </link>
+
+      <!-- East Wall -->
+      <link name="wall_east">
+        <pose>0 5 1.5 0 0 1.570796</pose>
+        <collision name="collision"><geometry><box><size>0.2 10.2 3</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>0.2 10.2 3</size></box></geometry>
+          <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
+        </visual>
+      </link>
+
+      <!-- West Wall -->
+      <link name="wall_west">
+        <pose>0 -5 1.5 0 0 1.570796</pose>
+        <collision name="collision"><geometry><box><size>0.2 10.2 3</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>0.2 10.2 3</size></box></geometry>
+          <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ================================================================= -->
+    <!-- ── YOLO COCO DATASET OBJECTS (Auto-downloaded by Gazebo Fuel) ──  -->
+    <!-- ================================================================= -->
+
+    <!-- ── Furniture in a straight line along X axis at y=3 ── -->
+
+    <!-- COCO Class 56: Chair (1) – left -->
+    <include>
+      <name>chair_1</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Chair</uri>
+      <pose>-2 3 0 0 0 0</pose>
+    </include>
+
+    <!-- COCO Class 61: Dining Table – centre -->
+    <include>
+      <name>dining_table</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Table</uri>
+      <pose>0 3 0 0 0 0</pose>
+    </include>
+
+    <!-- COCO Class 56: Chair (2) – right -->
+    <include>
+      <name>chair_2</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Chair</uri>
+      <pose>2 3 0 0 0 0</pose>
+    </include>
+
+  </world>
+</sdf>
