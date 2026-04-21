@@ -110,7 +110,7 @@ def generate_launch_description():
     # Converts bridged /odom messages to odom → base_footprint TF
     odom_to_tf = Node(
         package='diff_drive_robot',
-        executable='odom_to_tf.py',
+        executable='odom_to_tf',
         name='odom_to_tf',
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}],
