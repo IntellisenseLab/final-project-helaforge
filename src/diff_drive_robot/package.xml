@@ -3,11 +3,11 @@
 <package format="3">
   <name>diff_drive_robot</name>
   <version>0.1.0</version>
-  <description>QBot2-style differential drive robot with Kinect V2 depth camera, SLAM and Nav2 for Gazebo Harmonic</description>
+  <description>QBot2 Semantic Robot Navigator with YOLO, SLAM, Nav2 and Voice Commands for Gazebo Harmonic</description>
   <maintainer email="user@todo.todo">user</maintainer>
   <license>MIT</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_python</buildtool_depend>
 
   <depend>xacro</depend>
   <depend>urdf</depend>
@@ -34,6 +34,6 @@
   <exec_depend>nav2_lifecycle_manager</exec_depend>
 
   <export>
-    <build_type>ament_cmake</build_type>
+    <build_type>ament_python</build_type>
   </export>
 </package>
