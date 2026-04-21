@@ -19,13 +19,13 @@ setup(
             glob('launch/*.py')),
         # config files
         (os.path.join('share', package_name, 'config'),
-            glob('config/*')),
+            glob('config/*.yaml') + glob('config/*.rviz')),
         # URDF / xacro
         (os.path.join('share', package_name, 'urdf'),
             glob('urdf/*')),
         # world files
         (os.path.join('share', package_name, 'worlds'),
-            glob('worlds/*')),
+            glob('worlds/*.sdf')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -33,12 +33,13 @@ setup(
     maintainer_email='user@todo.todo',
     description='QBot2 Semantic Robot Navigator with YOLO, SLAM, Nav2 and Voice Commands',
     license='MIT',
-    scripts=[
-        'scripts/odom_to_tf.py',
-        'scripts/yolo_tracker.py',
-        'scripts/sort.py',
-        'scripts/semantic_navigator.py',
-        'scripts/arrow_teleop.py',
-        'scripts/voice_commander.py',
-    ],
+    entry_points={
+        'console_scripts': [
+            'semantic_navigator = diff_drive_robot.semantic_navigator:main',
+            'voice_commander = diff_drive_robot.voice_commander:main',
+            'arrow_teleop = diff_drive_robot.arrow_teleop:main',
+            'odom_to_tf = diff_drive_robot.odom_to_tf:main',
+            'yolo_tracker = diff_drive_robot.yolo_tracker:main',
+        ],
+    },
 )

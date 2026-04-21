@@ -108,19 +108,19 @@ ros2 launch diff_drive_robot navigation.launch.py use_sim_time:=True use_slam:=T
 ### Terminal 3 – SemanticNavigator (brain node)
 
 ```bash
-ros2 run diff_drive_robot semantic_navigator.py
+ros2 run diff_drive_robot semantic_navigator
 ```
 
 ### Terminal 4 – Arrow-Key Teleop (for manual driving during scan)
 
 ```bash
-ros2 run diff_drive_robot arrow_teleop.py
+ros2 run diff_drive_robot arrow_teleop
 ```
 
 ### Terminal 5 – Voice Commander (optional, replaces manual topic pub)
 
 ```bash
-ros2 run diff_drive_robot voice_commander.py
+ros2 run diff_drive_robot voice_commander
 ```
 
 ---
@@ -156,28 +156,32 @@ Commands can be issued via **voice** (Terminal 5) or **topic publish** (any term
 
 ```
 diff_drive_robot/
-├── CMakeLists.txt
 ├── package.xml
+├── setup.py
+├── setup.cfg
+├── resource/
+│   └── diff_drive_robot              # ament index marker
+├── diff_drive_robot/                  # Python package (nodes + library)
+│   ├── __init__.py
+│   ├── semantic_navigator.py          # Main brain node (YOLO+SORT+PID+Nav)
+│   ├── voice_commander.py             # Vosk voice command interface
+│   ├── arrow_teleop.py                # Arrow-key manual control
+│   ├── yolo_tracker.py                # Standalone YOLO+SORT node
+│   ├── sort.py                        # SORT tracking algorithm
+│   └── odom_to_tf.py                  # Odometry → TF broadcaster
 ├── config/
-│   ├── gz_bridge.yaml                  # Gazebo ↔ ROS 2 topic bridge
+│   ├── gz_bridge.yaml                 # Gazebo ↔ ROS 2 topic bridge
 │   ├── mapper_params_online_async.yaml # SLAM Toolbox config
-│   ├── nav2_params.yaml                # Nav2 parameters
-│   └── nav2_rviz.rviz                  # RViz config
+│   ├── nav2_params.yaml               # Nav2 parameters
+│   └── nav2_rviz.rviz                 # RViz config
 ├── launch/
-│   ├── spawn_robot.launch.py           # Gazebo + robot URDF
-│   ├── navigation.launch.py            # SLAM + Nav2 stack
-│   └── slam.launch.py                  # SLAM-only launch
-├── scripts/
-│   ├── semantic_navigator.py           # Main brain node (YOLO+SORT+PID+Nav)
-│   ├── voice_commander.py              # Vosk voice command interface
-│   ├── arrow_teleop.py                 # Arrow-key manual control
-│   ├── yolo_tracker.py                 # Standalone YOLO+SORT node
-│   ├── sort.py                         # SORT tracking algorithm
-│   └── odom_to_tf.py                   # Odometry → TF broadcaster
+│   ├── spawn_robot.launch.py          # Gazebo + robot URDF
+│   ├── navigation.launch.py           # SLAM + Nav2 stack
+│   └── slam.launch.py                 # SLAM-only launch
 ├── urdf/
-│   └── robot.urdf.xacro                # QBot2 robot model + sensors
+│   └── robot.urdf.xacro               # QBot2 robot model + sensors
 └── worlds/
-    └── yolo_world.sdf                  # Gazebo world with furniture
+    └── yolo_world.sdf                 # Gazebo world with furniture
 ```
 
 ---

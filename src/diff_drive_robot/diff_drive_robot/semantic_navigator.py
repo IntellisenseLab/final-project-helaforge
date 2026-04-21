@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 SemanticNavigator – Master ROS 2 Node  (v4)
 =============================================
@@ -41,7 +40,7 @@ except ImportError:
     YOLO = None
 
 try:
-    from sort import Sort
+    from diff_drive_robot.sort import Sort
 except ImportError:
     Sort = None
 
@@ -76,29 +75,27 @@ def norm_angle(a):
 # ═══════════════════════════════════════════════════════════════
 #  CONFIGURATION
 # ═══════════════════════════════════════════════════════════════
-YOLO_EVERY_N      = 10      # run YOLO every N-th camera frame
-STANDOFF          = 0.50    # stop 50 cm from object
-WP_SPACING        = 0.60    # breadcrumb every 60 cm (fewer waypoints)
-WP_TOL            = 0.25    # waypoint reached tolerance
+YOLO_EVERY_N      = 10
+STANDOFF          = 0.50
+WP_SPACING        = 0.60
+WP_TOL            = 0.25
 
-# PID gains
-KP_LIN            = 1.2     # proportional – linear  (aggressive)
-KI_LIN            = 0.02    # integral – linear
-KD_LIN            = 0.10    # derivative – linear
-KP_ANG            = 3.0     # proportional – angular (snappy turns)
-KI_ANG            = 0.01    # integral – angular
-KD_ANG            = 0.2     # derivative – angular
+KP_LIN            = 1.2
+KI_LIN            = 0.02
+KD_LIN            = 0.10
+KP_ANG            = 3.0
+KI_ANG            = 0.01
+KD_ANG            = 0.2
 
-MAX_LIN           = 0.50    # m/s  (doubled)
-MAX_ANG           = 1.5     # rad/s
-RAMP_RATE         = 2.0     # m/s² (fast ramp-up)
+MAX_LIN           = 0.50
+MAX_ANG           = 1.5
+RAMP_RATE         = 2.0
 
-# Obstacle avoidance
-OBS_STOP_DIST     = 0.30    # hard stop (m)
-OBS_SLOW_DIST     = 0.70    # start slowing (m)
-OBS_SIDE_STEER    = 0.80    # steer away if side obstacle < this (m)
-LIDAR_ARC_FRONT   = 30      # degrees each side of centre to check
-LIDAR_ARC_SIDE    = 60      # degrees for left/right zones
+OBS_STOP_DIST     = 0.30
+OBS_SLOW_DIST     = 0.70
+OBS_SIDE_STEER    = 0.80
+LIDAR_ARC_FRONT   = 30
+LIDAR_ARC_SIDE    = 60
 
 
 class SemanticNavigator(Node):
@@ -108,36 +105,28 @@ class SemanticNavigator(Node):
         self.get_logger().info('SemanticNavigator initializing …')
         self.cb = ReentrantCallbackGroup()
 
-        # ── State ────────────────────────────────────────────────────
         self.scanning = False
         self.object_dict: dict[str, dict] = {}
         self.frame_count = 0
 
-        # ── Odom ─────────────────────────────────────────────────────
         self.ox = self.oy = self.oyaw = 0.0
 
-        # ── Waypoints ────────────────────────────────────────────────
         self.waypoints: list[tuple[float, float]] = []
         self.home_x = self.home_y = 0.0
 
-        # ── LiDAR obstacle distances ────────────────────────────────
         self.obs_front = float('inf')
         self.obs_left  = float('inf')
         self.obs_right = float('inf')
 
-        # ── PID state ────────────────────────────────────────────────
         self._pid_reset()
-        self.current_lin = 0.0   # for velocity ramping
+        self.current_lin = 0.0
 
-        # ── Publishers ───────────────────────────────────────────────
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
-        # ── CvBridge / TF ────────────────────────────────────────────
         self.bridge = CvBridge()
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
-        # ── YOLO ─────────────────────────────────────────────────────
         if YOLO is not None:
             self.get_logger().info('Loading YOLO26n …')
             self.model = YOLO('yolo26n.pt')
@@ -146,14 +135,11 @@ class SemanticNavigator(Node):
         else:
             self.model = None
 
-        # ── SORT ─────────────────────────────────────────────────────
         self.tracker = Sort(max_age=30, min_hits=3,
                             iou_threshold=0.3) if Sort else None
 
-        # ── Nav2 ─────────────────────────────────────────────────────
         self.nav = BasicNavigator() if BasicNavigator else None
 
-        # ── Subscribers ──────────────────────────────────────────────
         self.create_subscription(Odometry, '/odom', self._odom_cb, 10,
                                  callback_group=self.cb)
         self.create_subscription(LaserScan, '/scan', self._scan_cb, 10,
@@ -166,16 +152,14 @@ class SemanticNavigator(Node):
         self.get_logger().info(
             'Ready.  Commands: scan | scan stop | <id> | return home | list')
 
-    # ──────────────────────────────────────────────────────────────────
-    #  PID helpers
-    # ──────────────────────────────────────────────────────────────────
+    # ── PID ───────────────────────────────────────────────────────────
     def _pid_reset(self):
         self.lin_i = self.lin_prev = 0.0
         self.ang_i = self.ang_prev = 0.0
 
     def _pid_linear(self, error, dt):
         self.lin_i += error * dt
-        self.lin_i = max(-0.5, min(0.5, self.lin_i))  # anti-windup
+        self.lin_i = max(-0.5, min(0.5, self.lin_i))
         d = (error - self.lin_prev) / dt if dt > 0 else 0.0
         self.lin_prev = error
         return KP_LIN * error + KI_LIN * self.lin_i + KD_LIN * d
@@ -188,7 +172,6 @@ class SemanticNavigator(Node):
         return KP_ANG * error + KI_ANG * self.ang_i + KD_ANG * d
 
     def _ramp(self, target, dt):
-        """Smooth velocity ramping to avoid jerky starts/stops."""
         max_delta = RAMP_RATE * dt
         if target > self.current_lin:
             self.current_lin = min(target, self.current_lin + max_delta)
@@ -196,58 +179,40 @@ class SemanticNavigator(Node):
             self.current_lin = max(target, self.current_lin - max_delta)
         return self.current_lin
 
-    # ──────────────────────────────────────────────────────────────────
-    #  Obstacle avoidance layer
-    # ──────────────────────────────────────────────────────────────────
+    # ── Obstacle avoidance ────────────────────────────────────────────
     def _obstacle_adjust(self, raw_lin, raw_ang):
-        """
-        Modify raw PID outputs based on LiDAR obstacle readings.
-        Returns (linear, angular) after avoidance adjustment.
-        """
         lin, ang = raw_lin, raw_ang
-
-        # ── Front obstacle ───────────────────────────────────────────
         if self.obs_front < OBS_STOP_DIST:
             lin = 0.0
-            # Steer away from the closer side
             if self.obs_left > self.obs_right:
-                ang = MAX_ANG     # turn left
+                ang = MAX_ANG
             else:
-                ang = -MAX_ANG    # turn right
+                ang = -MAX_ANG
         elif self.obs_front < OBS_SLOW_DIST:
-            # Slow down proportionally
             factor = (self.obs_front - OBS_STOP_DIST) / (OBS_SLOW_DIST - OBS_STOP_DIST)
             lin *= max(0.1, factor)
-
-        # ── Side obstacles (gentle steering) ─────────────────────────
         if self.obs_left < OBS_SIDE_STEER and lin > 0:
-            ang -= 0.4   # nudge right
+            ang -= 0.4
         if self.obs_right < OBS_SIDE_STEER and lin > 0:
-            ang += 0.4   # nudge left
-
+            ang += 0.4
         lin = max(-MAX_LIN, min(MAX_LIN, lin))
         ang = max(-MAX_ANG, min(MAX_ANG, ang))
         return lin, ang
 
-    # ══════════════════════════════════════════════════════════════════
-    #  SUBSCRIBERS
-    # ══════════════════════════════════════════════════════════════════
+    # ── Subscribers ───────────────────────────────────────────────────
     def _odom_cb(self, msg: Odometry):
         self.ox = msg.pose.pose.position.x
         self.oy = msg.pose.pose.position.y
         self.oyaw = yaw_from_quat(msg.pose.pose.orientation)
-
         if self.scanning and self.waypoints:
             lx, ly = self.waypoints[-1]
             if math.hypot(self.ox - lx, self.oy - ly) >= WP_SPACING:
                 self.waypoints.append((self.ox, self.oy))
 
     def _scan_cb(self, msg: LaserScan):
-        """Extract min distances in front / left / right zones."""
         n = len(msg.ranges)
         if n == 0:
             return
-
         def zone_min(centre_deg, half_arc_deg):
             centre_idx = int((math.radians(centre_deg) - msg.angle_min)
                              / msg.angle_increment) % n
@@ -257,14 +222,11 @@ class SemanticNavigator(Node):
             vals = [r for r in msg.ranges[lo:hi+1]
                     if msg.range_min < r < msg.range_max]
             return min(vals) if vals else float('inf')
-
         self.obs_front = zone_min(0, LIDAR_ARC_FRONT)
         self.obs_left  = zone_min(90, LIDAR_ARC_SIDE // 2)
         self.obs_right = zone_min(-90, LIDAR_ARC_SIDE // 2)
 
-    # ══════════════════════════════════════════════════════════════════
-    #  COMMAND HANDLER
-    # ══════════════════════════════════════════════════════════════════
+    # ── Command handler ──────────────────────────────────────────────
     def _cmd_cb(self, msg: String):
         cmd = msg.data.strip().lower()
         self.get_logger().info(f'CMD: "{cmd}"')
@@ -304,9 +266,7 @@ class SemanticNavigator(Node):
                 self.get_logger().warn(
                     f'"{cmd}" unknown. Objects: {list(self.object_dict.keys())}')
 
-    # ══════════════════════════════════════════════════════════════════
-    #  IMAGE CALLBACK  (throttled YOLO → SORT → register)
-    # ══════════════════════════════════════════════════════════════════
+    # ── Image callback ────────────────────────────────────────────────
     def _img_cb(self, msg: Image):
         if not self.scanning or not self.model or not self.tracker:
             return
@@ -363,11 +323,8 @@ class SemanticNavigator(Node):
                     f'  ║  Est. distance: {depth:.1f} m              ║\n'
                     f'  ╚══════════════════════════════════════╝')
 
-    # ══════════════════════════════════════════════════════════════════
-    #  MOTION: PID drive to point with obstacle avoidance
-    # ══════════════════════════════════════════════════════════════════
+    # ── Motion ────────────────────────────────────────────────────────
     def _drive_to(self, tx, ty, tol=WP_TOL, timeout=60.0):
-        """PID drive to (tx,ty) with obstacle avoidance and ramping."""
         self._pid_reset()
         self.current_lin = 0.0
         t0 = time.time()
@@ -390,23 +347,17 @@ class SemanticNavigator(Node):
             desired = math.atan2(dy, dx)
             yaw_err = norm_angle(desired - self.oyaw)
 
-            # PID outputs
             raw_lin = self._pid_linear(dist, dt)
             raw_ang = self._pid_angular(yaw_err, dt)
 
-            # Only move forward when roughly facing target
             if abs(yaw_err) > 0.8:
                 raw_lin = 0.0
             elif abs(yaw_err) > 0.3:
-                raw_lin *= 0.5   # slow while turning
+                raw_lin *= 0.5
 
             raw_lin = max(0.0, min(MAX_LIN, raw_lin))
             raw_ang = max(-MAX_ANG, min(MAX_ANG, raw_ang))
-
-            # Ramp
             raw_lin = self._ramp(raw_lin, dt)
-
-            # Obstacle avoidance
             lin, ang = self._obstacle_adjust(raw_lin, raw_ang)
 
             cmd = Twist()
@@ -414,37 +365,29 @@ class SemanticNavigator(Node):
             cmd.angular.z = ang
             self.cmd_pub.publish(cmd)
 
-        # Stop
         self.current_lin = 0.0
         self.cmd_pub.publish(Twist())
 
     def _drive_near(self, obj_x, obj_y, label=''):
-        """Drive to 50 cm before the object, facing it."""
         dx = obj_x - self.ox
         dy = obj_y - self.oy
         dist = math.hypot(dx, dy)
-
         if dist < STANDOFF:
             self.get_logger().info(f'Already near {label}.')
             return
-
         scale = (dist - STANDOFF) / dist
         gx = self.ox + dx * scale
         gy = self.oy + dy * scale
-
         self.get_logger().info(
-            f'🧭 Driving to ({gx:.2f},{gy:.2f}) [50cm from {label}]')
+            f'Driving to ({gx:.2f},{gy:.2f}) [50cm from {label}]')
         self._drive_to(gx, gy, tol=0.15, timeout=90.0)
-        self.get_logger().info(f'✅ Reached {label}!')
+        self.get_logger().info(f'Reached {label}!')
 
-    # ══════════════════════════════════════════════════════════════════
-    #  RETRACE WAYPOINTS
-    # ══════════════════════════════════════════════════════════════════
+    # ── Retrace ───────────────────────────────────────────────────────
     def _retrace(self):
         if len(self.waypoints) < 2:
             self.get_logger().info('No waypoints to retrace.')
             return
-
         rw = list(reversed(self.waypoints))
         total = len(rw)
         for i, (wx, wy) in enumerate(rw):
@@ -452,12 +395,9 @@ class SemanticNavigator(Node):
                 f'  WP {i+1}/{total}: ({wx:.2f},{wy:.2f})',
                 throttle_duration_sec=1.0)
             self._drive_to(wx, wy, tol=WP_TOL, timeout=30.0)
+        self.get_logger().info('Back at start!')
 
-        self.get_logger().info('✅ Back at start!')
-
-    # ══════════════════════════════════════════════════════════════════
-    #  DISPLAY
-    # ══════════════════════════════════════════════════════════════════
+    # ── Display ───────────────────────────────────────────────────────
     def _print_dict(self):
         self.get_logger().info('═══════ Detected Objects ═══════')
         if not self.object_dict:
@@ -469,7 +409,6 @@ class SemanticNavigator(Node):
         self.get_logger().info('════════════════════════════════')
 
 
-# ══════════════════════════════════════════════════════════════════════
 def main(args=None):
     rclpy.init(args=args)
     node = SemanticNavigator()

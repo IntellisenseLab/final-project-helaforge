@@ -1,10 +1,5 @@
-#!/usr/bin/env python3
 """
 Subscribes to /odom and broadcasts the odom → base_footprint TF transform.
-
-This is needed because the Gz Sim DiffDrive plugin publishes TF on a
-Gazebo transport topic that doesn't reliably bridge to ROS /tf.
-Instead, we use the already-bridged /odom ROS topic.
 """
 import rclpy
 from rclpy.node import Node
@@ -18,13 +13,11 @@ class OdomToTF(Node):
     def __init__(self):
         super().__init__('odom_to_tf')
         self.tf_broadcaster = TransformBroadcaster(self)
-
         qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.VOLATILE,
             depth=10,
         )
-
         self.create_subscription(Odometry, '/odom', self.odom_cb, qos)
         self.get_logger().info('odom_to_tf node started — publishing odom → base_footprint TF')
 

@@ -1,25 +1,13 @@
-#!/usr/bin/env python3
 """
-Arrow-Key Teleop for ROS 2
-===========================
-Drive your robot with arrow keys.  The robot moves only while a key is
-held down and stops immediately when released.
-
-Controls:
-  ↑  – forward       ↓  – backward
-  ←  – turn left     →  – turn right
-  q  – quit
+Arrow-Key Teleop for ROS 2 – drive with arrow keys, stop on release.
 """
-
 import curses
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 
-
-# ── Speeds (tune to your robot) ─────────────────────────────────────
-LINEAR_SPEED  = 0.3   # m/s
-ANGULAR_SPEED = 1.0   # rad/s
+LINEAR_SPEED  = 0.3
+ANGULAR_SPEED = 1.0
 
 
 class ArrowTeleop(Node):
@@ -45,36 +33,34 @@ def main(args=None):
     curses.noecho()
     curses.cbreak()
     stdscr.keypad(True)
-    stdscr.nodelay(True)       # non-blocking getch
-    stdscr.timeout(100)        # refresh every 100 ms
+    stdscr.nodelay(True)
+    stdscr.timeout(100)
 
     try:
         stdscr.addstr(0, 0, '=== Arrow-Key Teleop ===')
-        stdscr.addstr(1, 0, '↑/↓ = forward/back   ←/→ = turn')
+        stdscr.addstr(1, 0, 'Up/Down = forward/back   Left/Right = turn')
         stdscr.addstr(2, 0, 'q = quit')
         stdscr.addstr(4, 0, 'Status: READY')
 
         while True:
             key = stdscr.getch()
-
             if key == ord('q'):
                 break
             elif key == curses.KEY_UP:
                 node.send(LINEAR_SPEED, 0.0)
-                status = 'FORWARD ▲'
+                status = 'FORWARD'
             elif key == curses.KEY_DOWN:
                 node.send(-LINEAR_SPEED, 0.0)
-                status = 'BACKWARD ▼'
+                status = 'BACKWARD'
             elif key == curses.KEY_LEFT:
                 node.send(0.0, ANGULAR_SPEED)
-                status = 'TURN LEFT ◀'
+                status = 'TURN LEFT'
             elif key == curses.KEY_RIGHT:
                 node.send(0.0, -ANGULAR_SPEED)
-                status = 'TURN RIGHT ▶'
+                status = 'TURN RIGHT'
             else:
-                # No key pressed → stop
                 node.stop()
-                status = 'STOPPED ■'
+                status = 'STOPPED'
 
             stdscr.move(4, 0)
             stdscr.clrtoeol()

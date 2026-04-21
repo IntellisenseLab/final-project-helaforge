@@ -1,22 +1,6 @@
-#!/usr/bin/env python3
 """
-Voice Commander for SemanticNavigator
-======================================
-Uses Vosk offline speech recognition to issue commands via voice.
-
-Recognized phrases:
-  "scan"             → starts scanning
-  "stop scan"        → stops scanning, robot returns home
-  "go to <object>"   → navigate to detected object
-  "return home"      → robot returns to start position
-  "list"             → print detected objects
-
-Requires:
-  pip3 install vosk sounddevice
-  Download model: https://alphacephei.com/vosk/models
-  Place in ~/vosk-model  (or set VOSK_MODEL_PATH env var)
+Voice Commander for SemanticNavigator – Vosk offline speech recognition.
 """
-
 import os
 import sys
 import json
@@ -38,11 +22,9 @@ except ImportError:
     sys.exit(1)
 
 
-# ── Audio queue ──────────────────────────────────────────────────────
 audio_q: queue.Queue = queue.Queue()
 
 def audio_callback(indata, frames, time_info, status):
-    """Called by sounddevice for each audio block."""
     audio_q.put(bytes(indata))
 
 
@@ -52,7 +34,6 @@ class VoiceCommander(Node):
         super().__init__('voice_commander')
         self.pub = self.create_publisher(String, '/semantic_nav/command', 10)
 
-        # ── Load Vosk model ──────────────────────────────────────────
         if not os.path.isdir(model_path):
             self.get_logger().error(
                 f'Vosk model not found at: {model_path}\n'
@@ -63,13 +44,12 @@ class VoiceCommander(Node):
         self.get_logger().info(f'Loading Vosk model from {model_path} …')
         self.model = Model(model_path)
         self.recognizer = KaldiRecognizer(self.model, 16000)
-        self.get_logger().info('Vosk model loaded ✓')
+        self.get_logger().info('Vosk model loaded')
 
-        # ── Known object list (populated when user says "list") ──────
         self.get_logger().info(
             '\n'
             '╔══════════════════════════════════════╗\n'
-            '║   🎤  VOICE COMMANDER READY  🎤      ║\n'
+            '║      VOICE COMMANDER READY           ║\n'
             '║                                      ║\n'
             '║  Say:                                 ║\n'
             '║    "scan"          - start scanning   ║\n'
@@ -81,7 +61,6 @@ class VoiceCommander(Node):
             '╚══════════════════════════════════════╝')
 
     def process_text(self, text: str):
-        """Parse recognized text and publish the appropriate command."""
         text = text.strip().lower()
         if not text:
             return
@@ -90,15 +69,10 @@ class VoiceCommander(Node):
 
         cmd = None
 
-        # ── Match commands ───────────────────────────────────────────
         if 'scan' in text and ('stop' in text or 'end' in text or 'finish' in text):
             cmd = 'scan stop'
-        elif 'scan' in text and 'start' not in text:
-            # Just "scan" alone
-            if text.strip() in ('scan', 'begin scan', 'start scan'):
-                cmd = 'scan'
-            else:
-                cmd = 'scan'
+        elif 'scan' in text:
+            cmd = 'scan'
         elif 'start' in text and 'scan' in text:
             cmd = 'scan'
         elif 'return' in text and 'home' in text:
@@ -106,13 +80,12 @@ class VoiceCommander(Node):
         elif 'go home' in text or 'come home' in text or 'back home' in text:
             cmd = 'return home'
         elif 'go to' in text:
-            # Extract object name after "go to"
             idx = text.index('go to') + 5
             obj_name = text[idx:].strip()
             if obj_name:
                 cmd = obj_name
             else:
-                self.get_logger().warn('  → "go to" what? Say "go to chair_5"')
+                self.get_logger().warn('  "go to" what? Say "go to chair_5"')
         elif 'navigate to' in text:
             idx = text.index('navigate to') + 11
             obj_name = text[idx:].strip()
@@ -128,25 +101,20 @@ class VoiceCommander(Node):
             msg = String()
             msg.data = cmd
             self.pub.publish(msg)
-            self.get_logger().info(f'  → Published: "{cmd}"')
+            self.get_logger().info(f'  Published: "{cmd}"')
         else:
-            self.get_logger().info(f'  → (not a recognized command)')
+            self.get_logger().info(f'  (not a recognized command)')
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    # ── Find Vosk model ──────────────────────────────────────────────
     model_path = os.environ.get(
         'VOSK_MODEL_PATH',
         os.path.expanduser('~/vosk-model'))
 
     node = VoiceCommander(model_path)
 
-    # ── Open microphone ──────────────────────────────────────────────
-    device_info = sd.query_devices(kind='input')
-    samplerate = int(device_info['default_samplerate'])
-    # Vosk expects 16000 Hz — we'll resample if needed but try native
     samplerate = 16000
 
     try:
@@ -158,7 +126,7 @@ def main(args=None):
                 callback=audio_callback):
 
             node.get_logger().info(
-                f'🎤 Microphone open (16 kHz). Speak your commands!')
+                f'Microphone open (16 kHz). Speak your commands!')
 
             while rclpy.ok():
                 data = audio_q.get()
@@ -167,8 +135,6 @@ def main(args=None):
                     text = result.get('text', '')
                     if text:
                         node.process_text(text)
-                # Partial results (optional live feedback)
-                # partial = json.loads(node.recognizer.PartialResult())
 
     except KeyboardInterrupt:
         pass
