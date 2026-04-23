@@ -1,6 +1,6 @@
 """
-SemanticNavigator – v5
-======================
+SemanticNavigator – v6 (fixed)
+==============================
 Scan your environment manually with the arrow teleop while YOLO detects and
 logs objects. Then navigate to any detected object by voice or typed command.
 
@@ -32,6 +32,7 @@ import time
 import os
 import json
 import sys
+import re
 import threading
 
 import rclpy
@@ -60,7 +61,11 @@ except ImportError:
 # ── Configuration ─────────────────────────────────────────────────────────────
 YOLO_MODEL       = 'yolov8n.pt'   # lightweight model; auto-downloads on first run
 YOLO_EVERY_N     = 5              # run YOLO every N camera frames
-STANDOFF         = 1.00           # stop 1 m from target object
+# Confidence threshold — set LOW (0.20) for Gazebo plain-box simulation.
+# Plain colored boxes have no texture so YOLO scores are typically 15-30%.
+# Raise to 0.45+ when running on a real camera with real objects.
+CONF_THRESHOLD   = 0.20
+STANDOFF         = 0.30           # stop 30 cm from target object (close approach)
 WP_SPACING       = 0.60           # record a waypoint every 0.6 m
 WP_TOL           = 0.25           # waypoint reached tolerance
 MAX_LIN          = 0.3            # max linear speed  (m/s) – safe for Kobuki
@@ -200,7 +205,21 @@ class SemanticNavigator(Node):
         self.obs_front = min(front) if front else float('inf')
 
     def _depth_cb(self, msg):
-        self.latest_depth = self.bridge.imgmsg_to_cv2(msg, '32FC1')
+        """Accept both 32FC1 (metres, Kinect) and 16UC1 (mm, Gazebo bridge)."""
+        try:
+            enc = msg.encoding
+            if enc in ('32FC1', '32FC'):
+                # Already float metres (Kinect / physical)
+                self.latest_depth = self.bridge.imgmsg_to_cv2(msg, '32FC1')
+            else:
+                # 16UC1 = uint16 millimetres (Gazebo ros_gz_bridge)
+                raw = self.bridge.imgmsg_to_cv2(msg, '16UC1')
+                depth_f = raw.astype(np.float32) / 1000.0  # mm → metres
+                depth_f[raw == 0] = np.nan                 # 0 mm = no data
+                self.latest_depth = depth_f
+        except Exception as e:
+            self.get_logger().error(f'Depth decode failed ({msg.encoding}): {e}')
+            self.latest_depth = None
 
     def _img_cb(self, msg):
         """Run YOLO on camera frames and register detected objects in the map."""
@@ -213,21 +232,39 @@ class SemanticNavigator(Node):
         img = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         results = self.model(img, verbose=False)[0]
 
+        if not results.boxes:
+            return
+
         for box in results.boxes:
-            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-            cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
+            conf     = float(box.conf[0])
             cls_name = results.names[int(box.cls[0])]
 
-            # Estimate depth from Kinect depth image (median patch)
-            depth = -1.0
-            if self.latest_depth is not None:
-                patch = self.latest_depth[max(0, cy-5):cy+5, max(0, cx-5):cx+5]
-                valid = patch[np.isfinite(patch) & (patch > 0.3)]
-                if len(valid) > 0:
-                    depth = float(np.median(valid))
+            # Skip very low-confidence detections only
+            if conf < CONF_THRESHOLD:
+                continue
 
-            # Only register objects within 0.5–5.0 m
+            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+            cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
+
+            # ── FIX C: depth decode handles 16UC1 (Gazebo) and 32FC1 (Kinect)
+            depth = -1.0
+            if self.latest_depth is None:
+                self.get_logger().warn(
+                    'Depth image not received — check /camera/depth/image_raw')
+                continue
+
+            h, w = self.latest_depth.shape[:2]
+            patch = self.latest_depth[
+                max(0, cy - 20):min(h, cy + 20),
+                max(0, cx - 20):min(w, cx + 20)
+            ]
+            valid = patch[np.isfinite(patch) & (patch > 0.1)]
+            if len(valid) > 0:
+                depth = float(np.median(valid))
+
             if not (0.5 < depth < 5.0):
+                self.get_logger().info(
+                    f'SKIP {cls_name}: depth={depth:.2f}m out of range 0.5-5.0m')
                 continue
 
             # Project object position into world frame
@@ -240,9 +277,14 @@ class SemanticNavigator(Node):
                    for o in self.object_dict.values()):
                 continue
 
-            # Get dominant colour for RViz marker
-            bgr    = img[cy, cx]
-            new_id = f'{cls_name}_{len(self.object_dict) + 1}'
+            # ── FIX D: per-class counter → chair_1, chair_2, bottle_1 (not chair_1, bed_2)
+            class_count = sum(1 for k in self.object_dict if k.startswith(cls_name + '_'))
+            new_id = f'{cls_name}_{class_count + 1}'
+            while new_id in self.object_dict:           # handles edge cases
+                class_count += 1
+                new_id = f'{cls_name}_{class_count + 1}'
+
+            bgr = img[cy, cx]
             self.object_dict[new_id] = {
                 'x': mx, 'y': my,
                 'r': float(bgr[2] / 255),
@@ -250,7 +292,7 @@ class SemanticNavigator(Node):
                 'b': float(bgr[0] / 255),
             }
             self.get_logger().info(
-                f'NEW OBJECT: {new_id}  dist={depth:.1f}m  '
+                f'NEW OBJECT: {new_id}  conf={conf:.2f}  dist={depth:.1f}m  '
                 f'pos=({mx:.2f}, {my:.2f})')
 
     def _cmd_cb(self, msg):
@@ -267,8 +309,18 @@ class SemanticNavigator(Node):
         elif cmd in ('stop scan', 'scan stop'):
             self.scanning = False
             self._save_map()
-            self.get_logger().info('SCAN STOPPED — retracing home …')
-            self._retrace()
+            # Show a clean list of everything found
+            if self.object_dict:
+                self.get_logger().info(
+                    f'Scan complete. Found {len(self.object_dict)} object(s):')
+                for i, (k, v) in enumerate(self.object_dict.items(), 1):
+                    self.get_logger().info(
+                        f'  {i}. {k:20s} at ({v["x"]:+.2f}, {v["y"]:+.2f})')
+                self.get_logger().info(
+                    'Type an object name above to navigate to it.')
+            else:
+                self.get_logger().info(
+                    'Scan complete. No objects detected — drive closer and scan again.')
 
         elif cmd == 'list':
             if not self.object_dict:
@@ -279,33 +331,72 @@ class SemanticNavigator(Node):
                         f'  {i}. {k:25s} → ({v["x"]:+.2f}, {v["y"]:+.2f})')
 
         elif cmd == 'return home':
-            self._retrace()
-
-        elif cmd in self.object_dict:
-            o = self.object_dict[cmd]
-            self._drive_near(o['x'], o['y'], label=cmd)
-
-        elif cmd.startswith('go to '):
-            obj = cmd[6:].strip().replace(' ', '_')
-            if obj in self.object_dict:
-                o = self.object_dict[obj]
-                self._drive_near(o['x'], o['y'], label=obj)
-            else:
-                self.get_logger().warn(f'Object not found: {obj}')
+            threading.Thread(target=self._retrace, daemon=True).start()
 
         else:
-            self.get_logger().warn(f'Unknown command: "{cmd}"')
+            # Case-insensitive key lookup so "Chair_1" works the same as "chair_1"
+            matched_key = None
+            for k in self.object_dict:
+                if k.lower() == cmd:
+                    matched_key = k
+                    break
+
+            # 'go to <object>' alternate syntax
+            if matched_key is None and cmd.startswith('go to '):
+                raw = cmd[6:].strip().replace(' ', '_')
+                for k in self.object_dict:
+                    if k.lower() == raw:
+                        matched_key = k
+                        break
+
+            if matched_key:
+                o = self.object_dict[matched_key]
+                dist_to_obj = math.hypot(o['x'] - self.ox, o['y'] - self.oy)
+                self.get_logger().info(
+                    f'─── {matched_key} ───')
+                self.get_logger().info(
+                    f'  Stored position : ({o["x"]:+.2f}, {o["y"]:+.2f}) m')
+                self.get_logger().info(
+                    f'  Robot position  : ({self.ox:+.2f}, {self.oy:+.2f}) m')
+                self.get_logger().info(
+                    f'  Distance        : {dist_to_obj:.2f} m')
+                if dist_to_obj < 0.15:
+                    self.get_logger().warn(
+                        f'  Object is at robot position — bad depth during scan.'
+                        f' Rescan closer to the object.')
+                    return
+                self.get_logger().info(
+                    f'  Navigating … (stop arrow_teleop first if robot is not moving)')
+                # run in thread so odom keeps updating during navigation
+                threading.Thread(
+                    target=self._drive_near,
+                    args=(o['x'], o['y']),
+                    kwargs={'label': matched_key},
+                    daemon=True
+                ).start()
+            else:
+                self.get_logger().warn(f'Unknown command or object not found: "{cmd}"')
+                self.get_logger().warn(f'Known objects: {list(self.object_dict.keys())}')
 
     # ── Navigation ────────────────────────────────────────────────────────────
     def _drive_to(self, tx, ty, tol=WP_TOL, stop_at_obs=None):
         self._pid_reset()
         t0 = time.time()
+        i = 0
         while rclpy.ok() and (time.time() - t0) < 45.0:
+            i += 1
             dx, dy = tx - self.ox, ty - self.oy
             dist   = math.hypot(dx, dy)
             if dist < tol:
                 break
-            if stop_at_obs is not None and self.obs_front <= stop_at_obs:
+
+            if i % 5 == 0:
+                self.get_logger().info(f'Nav: dist={dist:.2f}m, obs={self.obs_front:.2f}m')
+
+            # ── FIX F: only check standoff when ALREADY close to target ──────
+            if (stop_at_obs is not None
+                    and dist <= stop_at_obs
+                    and self.obs_front <= stop_at_obs):
                 break
 
             yaw_err = norm_angle(math.atan2(dy, dx) - self.oyaw)
@@ -326,7 +417,15 @@ class SemanticNavigator(Node):
         self.cmd_pub.publish(Twist())               # stop
 
     def _drive_near(self, tx, ty, label=''):
-        self.get_logger().info(f'Navigating to {label} …')
+        dist_to_target = math.hypot(tx - self.ox, ty - self.oy)
+        self.get_logger().info(
+            f'Navigating to {label} …  '
+            f'target=({tx:.2f},{ty:.2f})  robot=({self.ox:.2f},{self.oy:.2f})  '
+            f'dist={dist_to_target:.2f}m')
+        if dist_to_target < 0.3:
+            self.get_logger().warn(
+                f'{label} is nearly at robot position — '
+                f'bad depth during scan. Scan again closer to the object.')
         self._drive_to(tx, ty, tol=0.15, stop_at_obs=STANDOFF)
         self.get_logger().info(f'Arrived at {label}')
 
@@ -367,13 +466,19 @@ class SemanticNavigator(Node):
             self.marker_pub.publish(ma)
 
 
-# ── CLI stdin thread ──────────────────────────────────────────────────────────
+# ── CLI stdin thread ───────────────────────────────────────────────────────────
+# Strip ANSI/terminal escape sequences so garbage like ^[[?61;1;21;22c
+# that some terminals inject into stdin doesn't corrupt typed commands.
+_ANSI_ESC = re.compile(r'\x1b(?:\[[0-9;?]*[a-zA-Z]|\][^\x07]*\x07|[^\[\]])')
+
 def _stdin_reader(pub):
     """Reads commands typed in the terminal and publishes to /semantic_nav/command."""
     print('\n=== Semantic Navigator CLI ===')
     print('Commands: scan | stop scan | list | <object_id>\n')
     for line in sys.stdin:
-        cmd = line.strip()
+        clean = _ANSI_ESC.sub('', line)                          # strip escape seqs
+        clean = ''.join(c for c in clean if c.isprintable() or c == ' ')
+        cmd = clean.strip()
         if not cmd:
             continue
         msg      = String()

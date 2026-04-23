@@ -43,6 +43,11 @@ CY = 239.5
 WIDTH  = 640
 HEIGHT = 480
 
+# Kinect baseline: the RGB camera is ~25 mm to the right of the IR/depth camera.
+# When mapping an RGB pixel (u,v) to the depth image we shift u left by this
+# amount (in pixels at the nominal 525 focal length).
+KINECT_BASELINE_SHIFT = 16   # pixels at 640×480; tune if needed
+
 CAMERA_INFO_D = [0.0, 0.0, 0.0, 0.0, 0.0]          # distortion (none assumed)
 CAMERA_INFO_K = [FX, 0.0, CX,
                  0.0, FY, CY,
@@ -110,13 +115,19 @@ class KinectBridge(Node):
 
         # ── Depth frame ────────────────────────────────────────────────
         try:
-            depth_raw, _ = freenect.sync_get_depth()
-            # freenect returns (H, W) uint16 in raw disparity or mm units
-            # Convert to float32 metres (divide by 1000.0) for 32FC1
-            depth_m = (depth_raw.astype(np.float32)) / 1000.0
-            # Values of 0 or > 8 m are invalid → mark as NaN
-            depth_m[depth_m <= 0.0] = np.nan
-            depth_m[depth_m > 8.0]  = np.nan
+            depth_raw, _ = freenect.sync_get_depth()   # uint16, 0-2047 raw disparity
+
+            # ── Correct disparity → metres conversion for Kinect V1 ────
+            # freenect returns 11-bit raw disparity (NOT millimetres).
+            # Formula from the OpenKinect community calibration:
+            #   depth_m = 1.0 / (raw * -0.0030711016 + 3.3309495161)
+            # Values of 0 (no data) or 2047 (max/invalid) → NaN
+            raw_f = depth_raw.astype(np.float32)
+            depth_m = 1.0 / (raw_f * -0.0030711016 + 3.3309495161)
+            depth_m[depth_raw == 0]    = np.nan   # no reading
+            depth_m[depth_raw == 2047] = np.nan   # out of range
+            depth_m[depth_m > 8.0]    = np.nan   # clip > 8 m
+            depth_m[depth_m < 0.3]    = np.nan   # clip < 30 cm
 
             depth_msg = self.bridge.cv2_to_imgmsg(depth_m, encoding='32FC1')
             depth_msg.header.stamp    = now
