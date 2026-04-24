@@ -112,7 +112,6 @@ class KobukiDriver(Node):
 
         # ── Parameters ────────────────────────────────────────────────────────
         self.declare_parameter('serial_port', '/dev/ttyUSB0')
-        self.declare_parameter('use_sim_time', False)
         port = self.get_parameter('serial_port').get_parameter_value().string_value
 
         # ── State ─────────────────────────────────────────────────────────────
