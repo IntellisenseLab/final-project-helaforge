@@ -46,13 +46,17 @@ def generate_launch_description():
     )
 
     # ── RTAB-Map (RGB-D SLAM) ──────────────────────────────────────────
+# ── RTAB-Map (RGB-D SLAM) ──────────────────────────────────────────
     rtabmap = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
             get_package_share_directory('rtabmap_launch'), 'launch', 'rtabmap.launch.py')]),
         launch_arguments={
-            'rtabmap_args': '--delete_db_on_start',
-            'frame_id': 'base_footprint',
-            'odom_frame_id': 'odom',
+            'rtabmap_args': '--delete_db_on_start --Grid/FromDepth true --Grid/Sensor 0',
+            'frame_id': 'base_footprint',        # Keeps it mapped to root frame
+            'odom_frame_id': 'odom',            # Keeps it mapped to root odom
+            'map_frame_id': 'map',
+            'namespace': '',                    # Forces the wrapper to push nodes to root namespace if supported
+            'qos_map': '1',                     # Sets Transient Local QoS directly via launch script parameter
             'visual_odometry': 'false',
             'rgb_topic': '/camera/image_raw',
             'depth_topic': '/camera/depth/image_raw',

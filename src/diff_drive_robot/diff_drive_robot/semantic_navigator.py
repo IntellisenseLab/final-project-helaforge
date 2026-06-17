@@ -675,9 +675,14 @@ class SemanticNavigator(Node):
 
         self.create_subscription(Odometry, '/odom', self._odom_cb, 10, callback_group=self.cb)
         self.create_subscription(LaserScan, '/scan', self._scan_cb, 10, callback_group=self.cb)
-        self.create_subscription(Image, '/camera/image_raw', self._img_cb, 10, callback_group=self.cb)
+        self.declare_parameter('rgb_topic', '/camera/image_raw')
+        self.declare_parameter('depth_topic', '/camera/depth/image_raw')
+        rgb_topic = self.get_parameter('rgb_topic').value
+        depth_topic = self.get_parameter('depth_topic').value
+
+        self.create_subscription(Image, rgb_topic, self._img_cb, 10, callback_group=self.cb)
         self.latest_depth = None
-        self.create_subscription(Image, '/camera/depth/image_raw', self._depth_cb, 10, callback_group=self.cb)
+        self.create_subscription(Image, depth_topic, self._depth_cb, 10, callback_group=self.cb)
         self.create_subscription(String, '/semantic_nav/command', self._cmd_cb, 10, callback_group=self.cb)
         
         self.create_timer(1.0, self._publish_markers_cb, callback_group=self.cb)
@@ -768,7 +773,16 @@ class SemanticNavigator(Node):
             self.get_logger().warn(f"Unknown command or object: {cmd}")
 
     def _depth_cb(self, msg):
-        self.latest_depth = self.bridge.imgmsg_to_cv2(msg, '32FC1')
+        try:
+            if msg.encoding == '16UC1':
+                # Real Kinect depth format (16-bit unsigned in millimeters)
+                depth_img = self.bridge.imgmsg_to_cv2(msg, '16UC1')
+                self.latest_depth = depth_img.astype(np.float32) / 1000.0
+            else:
+                # Gazebo simulator depth format (32-bit float in meters)
+                self.latest_depth = self.bridge.imgmsg_to_cv2(msg, '32FC1')
+        except Exception as e:
+            self.get_logger().error(f"Depth cv_bridge error: {e}")
 
     def _img_cb(self, msg):
         if not self.scanning or not self.model: return
