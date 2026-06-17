@@ -52,6 +52,8 @@ def generate_launch_description():
         launch_arguments={
             'rtabmap_args': '--delete_db_on_start',
             'frame_id': 'base_footprint',
+            'odom_frame_id': 'odom',
+            'visual_odometry': 'false',
             'rgb_topic': '/camera/image_raw',
             'depth_topic': '/camera/depth/image_raw',
             'camera_info_topic': '/camera/camera_info',

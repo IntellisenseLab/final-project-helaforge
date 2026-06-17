@@ -129,4 +129,3 @@ def generate_launch_description():
         gz_bridge_scan,
         odom_to_tf,
     ])
-
