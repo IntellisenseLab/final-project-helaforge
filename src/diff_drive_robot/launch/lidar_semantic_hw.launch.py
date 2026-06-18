@@ -549,7 +549,7 @@ def generate_launch_description():
     )
 
     slam_lifecycle_manager = TimerAction(
-        period=5.0,
+        period=2.0,
         actions=[
             Node(
                 package='nav2_lifecycle_manager',

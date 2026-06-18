@@ -52,7 +52,8 @@
     dragStartX: 0,
     dragStartY: 0,
     dragPanX: 0,
-    dragPanY: 0
+    dragPanY: 0,
+    reconnectTimer: null
   };
 
   function defaultBridgeUrl() {
@@ -72,6 +73,21 @@
     els.connectionDot.classList.toggle("connected", connected);
     els.connectionText.textContent = text || (connected ? "Connected" : "Disconnected");
     els.connectBtn.textContent = connected ? "Disconnect" : "Connect";
+    // Update the map overlay to reflect connection state
+    if (!state.map) {
+      var title = document.getElementById("mapEmptyTitle");
+      var hint  = document.getElementById("mapEmptyHint");
+      if (title && hint) {
+        if (connected) {
+          title.textContent = "Waiting for /map";
+          hint.textContent  = "Connected ✅ — LiDAR scanning. Map appears automatically.";
+        } else {
+          title.textContent = "Not connected";
+          hint.textContent  = "Rosbridge: " + (els.bridgeUrl.value || defaultBridgeUrl()) +
+                              " — auto-reconnecting…";
+        }
+      }
+    }
   }
 
   function sendRos(obj) {
@@ -125,12 +141,13 @@
 
     state.ws.onclose = function () {
       setConnected(false, "Disconnected");
-      addStatus("ROSBridge disconnected");
+      addStatus("ROSBridge disconnected — will retry in 3 s");
+      scheduleReconnect();
     };
 
     state.ws.onerror = function () {
       setConnected(false, "Connection error");
-      addStatus("Could not connect to ROSBridge at " + url);
+      addStatus("Could not reach ROSBridge at " + url + " — retrying…");
     };
 
     state.ws.onmessage = function (event) {
@@ -184,6 +201,8 @@
     buildMapBitmap(msg);
     els.mapEmpty.style.display = "none";
     render();
+    addStatus("/map received: " + msg.info.width + "×" + msg.info.height +
+              " cells @ " + msg.info.resolution.toFixed(3) + " m/cell");
   }
 
   function buildMapBitmap(msg) {
@@ -731,6 +750,17 @@
     window.addEventListener("resize", resizeCanvas);
     setupMapInteraction();
     setupVoice();
+  }
+
+  function scheduleReconnect() {
+    if (state.reconnectTimer) { return; }
+    state.reconnectTimer = setTimeout(function () {
+      state.reconnectTimer = null;
+      if (!state.connected) {
+        addStatus("Auto-reconnecting to ROSBridge…");
+        connect();
+      }
+    }, 3000);
   }
 
   setupEvents();

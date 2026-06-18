@@ -1,0 +1,11 @@
+# Microsoft Kinect v1 / Xbox 360 Kinect — libfreenect USB access
+# NUI Motor (tilt + LED) — standard Xbox 360 Kinect
+SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02ad", MODE="0666"
+# NUI Motor — Kinect for Windows variant (ID 02c2)
+SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02c2", MODE="0666"
+# NUI Audio
+SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02ae", MODE="0666"
+# NUI Camera — standard
+SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02bf", MODE="0666"
+# NUI Camera — alternative ID
+SUBSYSTEM=="usb", ATTR{idVendor}=="045e", ATTR{idProduct}=="02b0", MODE="0666"

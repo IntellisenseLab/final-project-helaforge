@@ -1,0 +1,8 @@
+# LD19 LiDAR — matches ANY LD19 unit (any serial number)
+# CP2102 USB-UART chip (most LD19 units) — no product filter so any CP2102 that is NOT Kobuki
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", \
+  ATTRS{product}!="*obuki*", SYMLINK+="ld19", MODE="0666", TAG+="uaccess"
+
+# CH340 USB-UART chip variant
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", \
+  ATTRS{product}!="*obuki*", SYMLINK+="ld19", MODE="0666", TAG+="uaccess"

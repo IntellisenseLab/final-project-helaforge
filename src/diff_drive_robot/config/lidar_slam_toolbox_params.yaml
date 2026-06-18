@@ -13,14 +13,19 @@ slam_toolbox:
     base_frame: base_footprint
     scan_topic: /scan
 
-    transform_timeout: 0.5
+    # TF tolerance — wait up to 2s for odom→base_footprint from Kobuki
+    transform_timeout: 2.0
     tf_buffer_duration: 30.0
     mode: mapping
 
+    # Process every scan, publish map every 0.3 s — map appears immediately
+    throttle_scans: 1
+    map_update_interval: 0.3
+
     use_scan_matching: true
     use_scan_barycenter: true
-    minimum_travel_distance: 0.1
-    minimum_travel_heading: 0.1
+    minimum_travel_distance: 0.01
+    minimum_travel_heading: 0.01
     scan_buffer_size: 10
     scan_buffer_maximum_scan_distance: 10.0
 
