@@ -22,7 +22,7 @@ Commands (publish to /semantic_nav/command, or say via voice_commander):
 
 Tracker parameters:
   tracker_cfg  (string, default "botsort.yaml")   – swap to bytetrack.yaml for speed
-  yolo_model   (string, default "yolov8n.pt")
+  yolo_model   (string, default "yolo26n.pt")
   every_n      (int,    default 10)               – run YOLO every N frames
 """
 
@@ -345,7 +345,7 @@ class SemanticNavigator(Node):
 
         # ── Parameters ─────────────────────────────────────────────────────────
         self.declare_parameter('tracker_cfg', 'botsort.yaml')
-        self.declare_parameter('yolo_model',  'yolov8n.pt')
+        self.declare_parameter('yolo_model',  'yolo26n.pt')
         self.declare_parameter('every_n',     YOLO_EVERY_N)
         self.declare_parameter('return_max_linear', RETURN_MAX_LIN)
         self.declare_parameter('return_max_angular', RETURN_MAX_ANG)

@@ -54,10 +54,12 @@ class YoloBotsortTracker(Node):
         self.declare_parameter('camera_topic', '/camera/image_raw')
         self.declare_parameter('tracker_cfg',  'botsort.yaml')   # or bytetrack.yaml
         self.declare_parameter('every_n',      2)                 # process every N frames
+        self.declare_parameter('yolo_model',   'yolo26n.pt')
 
         camera_topic  = self.get_parameter('camera_topic').value
         self.tracker_cfg = self.get_parameter('tracker_cfg').value
         self.every_n  = self.get_parameter('every_n').value
+        yolo_model = self.get_parameter('yolo_model').value
 
         self.bridge      = CvBridge()
         self.frame_count = 0
@@ -65,8 +67,9 @@ class YoloBotsortTracker(Node):
         # ── YOLO model ────────────────────────────────────────────────────────
         if YOLO is not None:
             self.get_logger().info(
-                f'Loading YOLO model with {self.tracker_cfg} tracker …')
-            self.model = YOLO('yolov8n.pt')
+                f'Loading YOLO model {yolo_model} with '
+                f'{self.tracker_cfg} tracker …')
+            self.model = YOLO(yolo_model)
             # Warm-up pass (pre-JIT the graph so first real frame is fast)
             self.model.track(
                 np.zeros((480, 640, 3), dtype=np.uint8),

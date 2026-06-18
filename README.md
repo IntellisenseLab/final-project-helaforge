@@ -128,7 +128,20 @@ pip3 install --break-system-packages \
   sounddevice
 ```
 
-Performance note: YOLO on a Raspberry Pi can be slow. Start with `yolov8n.pt` and use `every_n:=15` or `every_n:=20` if the Pi is overloaded.
+Performance note: YOLO on a Raspberry Pi can be slow. This project defaults to the local `yolo26n.pt` model; use `every_n:=15` or `every_n:=20` if the Pi is overloaded.
+
+Make sure `yolo26n.pt` exists in the workspace root on the Pi:
+
+```bash
+ls -lh ~/semantic_robot_ws/yolo26n.pt
+```
+
+If the model is not committed to GitHub, copy it to the Pi manually or launch with an absolute path:
+
+```bash
+ros2 launch diff_drive_robot lidar_semantic_hw.launch.py \
+  yolo_model:=/absolute/path/to/yolo26n.pt
+```
 
 ## 4. Clone This Repository
 

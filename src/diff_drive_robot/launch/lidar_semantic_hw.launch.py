@@ -166,7 +166,7 @@ def generate_launch_description():
         description='Kinect yaw, radians')
 
     yolo_model_arg = DeclareLaunchArgument(
-        'yolo_model', default_value='yolov8n.pt',
+        'yolo_model', default_value='yolo26n.pt',
         description='Ultralytics YOLO model path/name')
     tracker_cfg_arg = DeclareLaunchArgument(
         'tracker_cfg', default_value='botsort.yaml',
