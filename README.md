@@ -128,19 +128,21 @@ pip3 install --break-system-packages \
   sounddevice
 ```
 
-Performance note: YOLO on a Raspberry Pi can be slow. This project defaults to the local `yolo26n.pt` model; use `every_n:=15` or `every_n:=20` if the Pi is overloaded.
+Performance note: YOLO on a Raspberry Pi can be slow. This project defaults to a local NCNN export named `yolo26n_ncnn_model`, using `640x640`, confidence `0.40`, `3 FPS` during SLAM, and `5 FPS` during saved-map navigation.
 
-Make sure `yolo26n.pt` exists in the workspace root on the Pi:
+Export the nano model once before running on the Pi:
 
 ```bash
-ls -lh ~/semantic_robot_ws/yolo26n.pt
+cd ~/semantic_robot_ws
+yolo export model=yolo26n.pt format=ncnn imgsz=640
+ls -lh ~/semantic_robot_ws/yolo26n_ncnn_model
 ```
 
-If the model is not committed to GitHub, copy it to the Pi manually or launch with an absolute path:
+If the exported NCNN directory is stored somewhere else, launch with an absolute path:
 
 ```bash
 ros2 launch diff_drive_robot lidar_semantic_hw.launch.py \
-  yolo_model:=/absolute/path/to/yolo26n.pt
+  yolo_model:=/absolute/path/to/yolo26n_ncnn_model
 ```
 
 ## 4. Clone This Repository
@@ -385,7 +387,15 @@ ros2 launch diff_drive_robot lidar_semantic_hw.launch.py \
   use_semantic:=true \
   use_qbot_nav:=true \
   use_rviz:=false \
-  every_n:=15 \
+  yolo_model:=yolo26n_ncnn_model \
+  yolo_imgsz:=640 \
+  yolo_conf:=0.40 \
+  detection_rate_slam:=3.0 \
+  detection_rate_navigation:=5.0 \
+  detection_enabled:=true \
+  preview_enabled:=false \
+  publish_annotated_image:=false \
+  save_video:=false \
   qbot_linear_speed:=0.08 \
   qbot_max_angular_speed:=0.25
 ```
@@ -397,6 +407,58 @@ ros2 topic hz /scan
 ros2 topic hz /odom
 ros2 topic hz /map
 ros2 topic echo /semantic_nav/status
+```
+
+### 9.1 Optional Web Dashboard
+
+The web dashboard is lightweight enough for the Raspberry Pi because it is only
+static HTML/CSS/JavaScript plus `rosbridge_websocket`. It displays `/map`,
+`/planned_path`, `/slam_pose`, `/semantic_nav/object_markers`, status messages,
+object list buttons, browser command input, browser voice input when supported,
+and gated teleop arrow keys.
+
+Start the full stack with rosbridge and the dashboard enabled:
+
+```bash
+ros2 launch diff_drive_robot lidar_semantic_hw.launch.py \
+  use_voice:=false \
+  use_rosbridge:=true \
+  use_web_dashboard:=true \
+  web_dashboard_port:=8080 \
+  use_rviz:=false
+```
+
+Open this from a laptop browser on the same network:
+
+```text
+http://RASPBERRY_PI_IP:8080
+```
+
+The page connects to:
+
+```text
+ws://RASPBERRY_PI_IP:9090
+```
+
+Browser voice depends on browser microphone permissions. If the browser blocks
+microphone access over plain HTTP, use the text command box or run the page from
+localhost on the laptop while pointing ROSBridge to the Pi.
+
+### 9.2 Object Deduplication
+
+Repeated detections of the same physical object are merged by default when they
+have the same YOLO class and their map positions are within `0.30 m`. The first
+label stays stable, later tracker IDs are stored as aliases, and the stored
+position is averaged across observations.
+
+Tune it at launch:
+
+```bash
+ros2 launch diff_drive_robot lidar_semantic_hw.launch.py \
+  object_dedup_enabled:=true \
+  object_dedup_distance:=0.30 \
+  object_dedup_same_class_only:=true \
+  object_dedup_update_position:=true
 ```
 
 Start mapping manually:

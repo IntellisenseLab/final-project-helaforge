@@ -536,12 +536,19 @@ diff_drive_robot/
 - If RViz curves while you command straight forward, first check `/kobuki/encoder_debug`. If `dl_m` and `dr_m` are very different while the robot is physically moving straight, tune `left_wheel_scale` / `right_wheel_scale` or check encoder direction.
 - To check straight odometry, drive exactly 1 m and compare `/odom`. If `/odom` reports too little distance, increase `wheel_diameter`; if it reports too much distance, decrease `wheel_diameter`.
 - To check rotation odometry, rotate exactly 360 degrees. If `/odom` yaw reports too little rotation, decrease `wheel_separation`; if it reports too much rotation, increase `wheel_separation`.
-- The default YOLO model is `yolo26n.pt`. Use a custom model with:
+- The default YOLO model is the NCNN export directory `yolo26n_ncnn_model`.
+  Export it once from the nano `.pt` model:
+
+```bash
+yolo export model=yolo26n.pt format=ncnn imgsz=640
+```
+
+Use a custom model with:
 
 ```bash
 ros2 launch diff_drive_robot rtabmap_hw.launch.py \
   serial_port:=/dev/ttyUSB0 \
-  yolo_model:=/absolute/path/to/model.pt
+  yolo_model:=/absolute/path/to/yolo26n_ncnn_model
 ```
 
 Example launch with common mapping tuning values:

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kobuki Semantic Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Kobuki Semantic Dashboard</h1>
+      <p>LiDAR map, Kinect object pins, commands, and teleop</p>
+    </div>
+    <div class="connection">
+      <span id="connectionDot" class="dot"></span>
+      <span id="connectionText">Disconnected</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="mapPanel">
+      <div class="mapToolbar">
+        <div class="field inlineField">
+          <label for="bridgeUrl">ROSBridge</label>
+          <input id="bridgeUrl" type="text" spellcheck="false">
+        </div>
+        <button id="connectBtn" type="button">Connect</button>
+        <button id="resetViewBtn" type="button">Reset View</button>
+        <button id="zoomInBtn" type="button">Zoom In</button>
+        <button id="zoomOutBtn" type="button">Zoom Out</button>
+      </div>
+      <div id="mapWrap" class="mapWrap">
+        <canvas id="mapCanvas"></canvas>
+        <div id="mapEmpty" class="mapEmpty">Waiting for /map</div>
+      </div>
+    </section>
+
+    <aside class="sidePanel">
+      <section class="panel">
+        <h2>Commands</h2>
+        <div class="commandGrid">
+          <button data-command="start mapping" type="button">Start Mapping</button>
+          <button data-command="stop mapping" type="button">Stop Mapping</button>
+          <button data-command="return home" type="button">Return Home</button>
+          <button data-command="list" type="button">List Objects</button>
+        </div>
+        <div class="field">
+          <label for="commandInput">Command Text</label>
+          <div class="commandRow">
+            <input id="commandInput" type="text" placeholder="go to chair 13">
+            <button id="sendCommandBtn" type="button">Send</button>
+          </div>
+        </div>
+        <button id="voiceBtn" class="wideButton" type="button">Start Browser Voice</button>
+        <p id="voiceStatus" class="hint">Voice uses your browser microphone when available.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Teleop</h2>
+        <div class="teleopState">
+          <span>Teleop gate</span>
+          <strong id="teleopState">Disabled</strong>
+        </div>
+        <div class="teleopGrid">
+          <span></span>
+          <button id="forwardBtn" type="button">Forward</button>
+          <span></span>
+          <button id="leftBtn" type="button">Left</button>
+          <button id="stopBtn" class="stopButton" type="button">Stop</button>
+          <button id="rightBtn" type="button">Right</button>
+          <span></span>
+          <button id="backBtn" type="button">Back</button>
+          <span></span>
+        </div>
+        <div class="sliders">
+          <label>Linear <input id="linearSpeed" type="range" min="0.03" max="0.20" step="0.01" value="0.10"></label>
+          <label>Angular <input id="angularSpeed" type="range" min="0.10" max="0.70" step="0.05" value="0.35"></label>
+        </div>
+        <p class="hint">Arrow keys work when teleop is enabled by mapping mode.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Detected Objects</h2>
+        <div id="objectList" class="objectList empty">No objects yet</div>
+      </section>
+
+      <section class="panel">
+        <h2>Status</h2>
+        <div id="statusLog" class="statusLog"></div>
+      </section>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

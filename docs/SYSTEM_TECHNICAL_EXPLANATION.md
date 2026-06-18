@@ -20,6 +20,7 @@ flowchart LR
     subgraph Laptop["Laptop"]
         VC["voice_commander<br/>Vosk speech recognition"]
         T["optional arrow_teleop"]
+        WEB["browser dashboard"]
     end
 
     subgraph DDS["ROS 2 DDS Network"]
@@ -37,6 +38,8 @@ flowchart LR
         SP["slam_pose_publisher"]
         A["qbot_navigation_server<br/>A* planner"]
         Q["qbot_controller<br/>path follower"]
+        RB["rosbridge_websocket"]
+        WDS["web_dashboard_server<br/>static files"]
     end
 
     subgraph Hardware["Robot Hardware"]
@@ -47,6 +50,10 @@ flowchart LR
 
     VC --> C
     T --> CMD
+    WEB <-->|WebSocket JSON| RB
+    WEB -->|HTTP| WDS
+    RB <-->|ROS topics| C
+    RB <-->|ROS topics| CMD
     C --> SN
     SN --> A
     A --> Q
@@ -65,6 +72,8 @@ flowchart LR
 ```
 
 The laptop does not need direct access to robot hardware. It only publishes recognized text commands on `/semantic_nav/command`.
+The optional web dashboard runs as static files served by the Pi and talks to ROS
+through `rosbridge_websocket`, so it does not add a heavy frontend runtime.
 
 ## 3. Topic-Level Architecture
 
@@ -178,9 +187,16 @@ sequenceDiagram
 
 ## 6. Object Mapping Pipeline
 
+The Raspberry Pi optimized detector uses the exported `yolo26n_ncnn_model`
+instead of running the `.pt` model directly. RGB frames are subscribed with
+sensor-data QoS depth `1`; only the newest frame is kept, old frames are
+dropped, and one inference is allowed at a time. The default detector settings
+are `640x640`, confidence `0.40`, `3 FPS` during SLAM, and `5 FPS` during
+saved-map navigation.
+
 ```mermaid
 flowchart LR
-    RGB["Kinect RGB image"] --> YOLO["YOLO + BoT-SORT"]
+    RGB["Kinect RGB image"] --> YOLO["YOLO26n NCNN + BoT-SORT"]
     YOLO --> BOX["object bounding box + track id"]
     DEPTH["Kinect registered depth"] --> PIX["depth at bbox center"]
     INFO["camera intrinsics"] --> P3D["pixel to camera 3D point"]
@@ -309,6 +325,8 @@ export ROS_STATIC_PEERS='LAPTOP_IP_ADDRESS'
 | `semantic_navigator` | Pi | Command state machine, object mapping, object goals |
 | `qbot_navigation_server` | Pi | A* path planning on `/map` |
 | `qbot_controller` | Pi | Path following, publishes `/cmd_vel` |
+| `rosbridge_websocket` | Pi | WebSocket bridge between browser JSON messages and ROS topics |
+| `web_dashboard_server` | Pi | Lightweight static HTTP server for the robot dashboard |
 
 ## 10. Failure Modes And Fixes
 

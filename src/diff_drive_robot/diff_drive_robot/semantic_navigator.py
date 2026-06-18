@@ -22,8 +22,12 @@ Commands (publish to /semantic_nav/command, or say via voice_commander):
 
 Tracker parameters:
   tracker_cfg  (string, default "botsort.yaml")   – swap to bytetrack.yaml for speed
-  yolo_model   (string, default "yolo26n.pt")
-  every_n      (int,    default 10)               – run YOLO every N frames
+  yolo_model   (string, default "yolo26n_ncnn_model")
+  image_topic  (string, default "/camera/image_raw")
+  yolo_imgsz   (int,    default 640)
+  yolo_conf    (float,  default 0.40)
+  detection_rate_slam       (float, default 3.0)
+  detection_rate_navigation (float, default 5.0)
 """
 
 import math
@@ -144,9 +148,15 @@ def depth_image_to_meters(msg: Image) -> np.ndarray:
 # ══════════════════════════════════════════════════════════════════════════════
 #  CONFIGURATION  (tune for real Kobuki + Kinect v1/libfreenect)
 # ══════════════════════════════════════════════════════════════════════════════
-YOLO_EVERY_N      = 10       # run YOLO every N frames
+YOLO_EVERY_N      = 10       # deprecated; kept for launch compatibility
+YOLO_MODEL_DEFAULT = 'yolo26n_ncnn_model'
+YOLO_IMAGE_SIZE   = 640
+YOLO_CONFIDENCE   = 0.40
+DETECTION_RATE_SLAM = 3.0
+DETECTION_RATE_NAVIGATION = 5.0
 OBJECT_CLEARANCE  = 0.05     # stop with front of robot 5 cm from target object
 ROBOT_RADIUS      = 0.20     # Kobuki body radius used for base_footprint goal
+OBJECT_DEDUP_DISTANCE = 0.30  # merge same-class detections within this map distance
 WP_SPACING        = 0.60     # minimum distance between recorded waypoints
 WP_TOL            = 0.25     # waypoint arrival tolerance (m)
 RETURN_MAX_LIN    = 0.10     # smooth return-home speed (m/s)
@@ -345,7 +355,17 @@ class SemanticNavigator(Node):
 
         # ── Parameters ─────────────────────────────────────────────────────────
         self.declare_parameter('tracker_cfg', 'botsort.yaml')
-        self.declare_parameter('yolo_model',  'yolo26n.pt')
+        self.declare_parameter('yolo_model',  YOLO_MODEL_DEFAULT)
+        self.declare_parameter('image_topic', '/camera/image_raw')
+        self.declare_parameter('yolo_imgsz', YOLO_IMAGE_SIZE)
+        self.declare_parameter('yolo_conf', YOLO_CONFIDENCE)
+        self.declare_parameter('detection_rate_slam', DETECTION_RATE_SLAM)
+        self.declare_parameter(
+            'detection_rate_navigation', DETECTION_RATE_NAVIGATION)
+        self.declare_parameter('detection_enabled', True)
+        self.declare_parameter('preview_enabled', False)
+        self.declare_parameter('publish_annotated_image', False)
+        self.declare_parameter('save_video', False)
         self.declare_parameter('every_n',     YOLO_EVERY_N)
         self.declare_parameter('return_max_linear', RETURN_MAX_LIN)
         self.declare_parameter('return_max_angular', RETURN_MAX_ANG)
@@ -354,6 +374,10 @@ class SemanticNavigator(Node):
         self.declare_parameter('rtabmap_mode_services', True)
         self.declare_parameter('object_clearance', OBJECT_CLEARANCE)
         self.declare_parameter('robot_radius', ROBOT_RADIUS)
+        self.declare_parameter('object_dedup_enabled', True)
+        self.declare_parameter('object_dedup_distance', OBJECT_DEDUP_DISTANCE)
+        self.declare_parameter('object_dedup_same_class_only', True)
+        self.declare_parameter('object_dedup_update_position', True)
         self.declare_parameter('object_depth_radius', 5)
         self.declare_parameter('object_lidar_fusion', True)
         self.declare_parameter('object_lidar_window_deg', 4.0)
@@ -362,6 +386,21 @@ class SemanticNavigator(Node):
 
         self.tracker_cfg = self.get_parameter('tracker_cfg').value
         yolo_model       = self.get_parameter('yolo_model').value
+        self.image_topic = str(self.get_parameter('image_topic').value)
+        self.yolo_imgsz = int(self.get_parameter('yolo_imgsz').value)
+        self.yolo_conf = float(self.get_parameter('yolo_conf').value)
+        self.detection_rate_slam = max(
+            0.1, float(self.get_parameter('detection_rate_slam').value))
+        self.detection_rate_navigation = max(
+            0.1, float(
+                self.get_parameter('detection_rate_navigation').value))
+        self.detection_enabled = bool(
+            self.get_parameter('detection_enabled').value)
+        self.preview_enabled = bool(
+            self.get_parameter('preview_enabled').value)
+        self.publish_annotated_image = bool(
+            self.get_parameter('publish_annotated_image').value)
+        self.save_video = bool(self.get_parameter('save_video').value)
         self.every_n     = self.get_parameter('every_n').value
         self.return_max_linear = float(
             self.get_parameter('return_max_linear').value)
@@ -378,6 +417,14 @@ class SemanticNavigator(Node):
         self.robot_radius = max(
             0.0, float(self.get_parameter('robot_radius').value))
         self.object_standoff = self.robot_radius + self.object_clearance
+        self.object_dedup_enabled = bool(
+            self.get_parameter('object_dedup_enabled').value)
+        self.object_dedup_distance = max(
+            0.0, float(self.get_parameter('object_dedup_distance').value))
+        self.object_dedup_same_class_only = bool(
+            self.get_parameter('object_dedup_same_class_only').value)
+        self.object_dedup_update_position = bool(
+            self.get_parameter('object_dedup_update_position').value)
         self.object_depth_radius = max(
             1, int(self.get_parameter('object_depth_radius').value))
         self.object_lidar_fusion = bool(
@@ -417,6 +464,10 @@ class SemanticNavigator(Node):
         # Latest depth image (set by _depth_cb)
         self._depth_image: np.ndarray | None = None
         self._depth_lock  = threading.Lock()
+        self._latest_rgb_msg: Image | None = None
+        self._rgb_lock = threading.Lock()
+        self._inference_lock = threading.Lock()
+        self._last_inference_time = 0.0
 
         # Kinect v1 camera intrinsics
         # Populated from CameraInfo once received; fall back to typical Kinect v1 values.
@@ -458,11 +509,17 @@ class SemanticNavigator(Node):
                 # Warm-up pass
                 self.model.track(
                     np.zeros((DEPTH_HEIGHT, DEPTH_WIDTH, 3), dtype=np.uint8),
-                    tracker=self.tracker_cfg, persist=True, verbose=False)
+                    tracker=self.tracker_cfg,
+                    persist=True,
+                    imgsz=self.yolo_imgsz,
+                    conf=self.yolo_conf,
+                    verbose=False)
                 self.get_logger().info(
                     f'YOLO warmed up with {self.tracker_cfg} ✓\n'
-                    '  (Switch to bytetrack.yaml with param tracker_cfg:=bytetrack.yaml'
-                    ' if processing is slow)')
+                    f'  model={yolo_model}, imgsz={self.yolo_imgsz}, '
+                    f'conf={self.yolo_conf:.2f}, '
+                    f'rates={self.detection_rate_slam:.1f}/'
+                    f'{self.detection_rate_navigation:.1f} fps')
             except Exception as exc:
                 self.get_logger().warn(
                     f'YOLO could not start ({exc}). '
@@ -492,23 +549,32 @@ class SemanticNavigator(Node):
             Empty, '/rtabmap/set_mode_localization', callback_group=self.cb)
 
         # ── Subscriptions ──────────────────────────────────────────────────────
+        sensor_qos = QoSProfile(depth=1)
+        sensor_qos.reliability = ReliabilityPolicy.BEST_EFFORT
+        sensor_qos.durability = DurabilityPolicy.VOLATILE
+
         self.create_subscription(Odometry, '/odom',
                                  self._odom_cb, 10, callback_group=self.cb)
         self.create_subscription(Odometry, '/slam_pose',
                                  self._slam_pose_cb, 10, callback_group=self.cb)
         self.create_subscription(LaserScan, '/scan',
                                  self._scan_cb, 10, callback_group=self.cb)
-        self.create_subscription(Image, '/camera/image_raw',
-                                 self._img_cb, 10, callback_group=self.cb)
+        self.create_subscription(Image, self.image_topic,
+                                 self._img_cb, sensor_qos,
+                                 callback_group=self.cb)
         self.create_subscription(Image, '/camera/depth/image_raw',
-                                 self._depth_cb, 10, callback_group=self.cb)
+                                 self._depth_cb, sensor_qos,
+                                 callback_group=self.cb)
         from sensor_msgs.msg import CameraInfo
         self.create_subscription(CameraInfo, '/camera/camera_info',
-                                 self._cam_info_cb, 10, callback_group=self.cb)
+                                 self._cam_info_cb, sensor_qos,
+                                 callback_group=self.cb)
         self.create_subscription(String, '/semantic_nav/command',
                                  self._cmd_cb, 10, callback_group=self.cb)
 
         self.create_timer(1.0, self._publish_object_markers,
+                          callback_group=self.cb)
+        self.create_timer(0.05, self._detection_timer_cb,
                           callback_group=self.cb)
 
         self.get_logger().info(
@@ -1114,6 +1180,64 @@ class SemanticNavigator(Node):
         scale = max(0.0, (dist - self.object_standoff) / dist)
         return (rx + dx * scale, ry + dy * scale, yaw)
 
+    def _find_duplicate_object(self, label: str, class_name: str,
+                               x: float, y: float) -> tuple[str, float] | None:
+        if not self.object_dedup_enabled or not self.object_dict:
+            return None
+
+        best_label = None
+        best_dist = float('inf')
+        cls = class_name.lower()
+        for old_label, old in self.object_dict.items():
+            if old_label == label:
+                return old_label, 0.0
+
+            if self.object_dedup_same_class_only:
+                old_cls = str(old.get('class', '')).lower()
+                if old_cls != cls:
+                    continue
+
+            dist = math.hypot(float(old['x']) - x, float(old['y']) - y)
+            if dist <= self.object_dedup_distance and dist < best_dist:
+                best_label = old_label
+                best_dist = dist
+
+        if best_label is None:
+            return None
+        return best_label, best_dist
+
+    def _merge_duplicate_object(self, existing_label: str, new_label: str,
+                                class_name: str, track_id: int,
+                                x: float, y: float, z: float,
+                                distance: float):
+        old = self.object_dict[existing_label]
+        observations = max(1, int(old.get('observations', 1)))
+
+        if self.object_dedup_update_position:
+            total = observations + 1
+            old['x'] = (float(old['x']) * observations + x) / total
+            old['y'] = (float(old['y']) * observations + y) / total
+            old_z = float(old.get('z', float('nan')))
+            if math.isfinite(z):
+                if math.isfinite(old_z):
+                    old['z'] = (old_z * observations + z) / total
+                else:
+                    old['z'] = z
+
+        old['observations'] = observations + 1
+        old['last_track_id'] = track_id
+        old['class'] = old.get('class') or class_name
+
+        if new_label != existing_label:
+            aliases = old.setdefault('aliases', [])
+            if new_label not in aliases:
+                aliases.append(new_label)
+
+        self.get_logger().debug(
+            f'Deduplicated {new_label} into {existing_label} '
+            f'(distance={distance:.2f} m, observations={old["observations"]}).',
+            throttle_duration_sec=3.0)
+
     def _cmd_cb(self, msg: String):
         cmd = self._normalize_command(msg.data)
         self.get_logger().info(f'CMD: "{cmd}"')
@@ -1244,16 +1368,44 @@ class SemanticNavigator(Node):
 
     # ── Image callback (YOLO + BoT-SORT + 3D coord registration) ──────────────
     def _img_cb(self, msg: Image):
-        if not self.scanning or not self.model:
+        with self._rgb_lock:
+            self._latest_rgb_msg = msg
+
+    def _detection_timer_cb(self):
+        if not self.detection_enabled or not self.model:
+            return
+        # Keep old behavior before a scan starts, but allow detection to continue
+        # after scan-stop while navigating on the saved map.
+        if not self.scanning and not self._home_set:
             return
 
-        self.frame_count += 1
-        if self.frame_count % self.every_n != 0:
+        rate = (
+            self.detection_rate_slam
+            if self.scanning else self.detection_rate_navigation)
+        now = time.monotonic()
+        if now - self._last_inference_time < (1.0 / rate):
+            return
+
+        if not self._inference_lock.acquire(blocking=False):
             return
 
         try:
+            with self._rgb_lock:
+                msg = self._latest_rgb_msg
+                self._latest_rgb_msg = None
+            if msg is None:
+                return
+
+            self._last_inference_time = now
+            self._run_detection(msg)
+        finally:
+            self._inference_lock.release()
+
+    def _run_detection(self, msg: Image):
+        try:
             img = image_to_bgr_array(msg)
-        except Exception:
+        except Exception as exc:
+            self.get_logger().debug(f'RGB conversion failed: {exc}')
             return
 
         stamp = msg.header.stamp
@@ -1263,6 +1415,11 @@ class SemanticNavigator(Node):
             img,
             tracker=self.tracker_cfg,
             persist=True,
+            imgsz=self.yolo_imgsz,
+            conf=self.yolo_conf,
+            show=False,
+            save=False,
+            save_txt=False,
             verbose=False)
 
         if not results or results[0].boxes is None:
@@ -1279,10 +1436,8 @@ class SemanticNavigator(Node):
 
         for tid, box, cls_id in zip(ids, xyxy, cls_ids):
             x1, y1, x2, y2 = box
-            label = f'{names[cls_id]}_{tid}'
-
-            if label in self.object_dict:
-                continue   # already registered
+            class_name = names[cls_id]
+            label = f'{class_name}_{tid}'
 
             cx_px = (x1 + x2) / 2.0
             cy_px = (y1 + y2) / 2.0
@@ -1300,10 +1455,21 @@ class SemanticNavigator(Node):
 
             mx, my, mz = coords
 
+            duplicate = self._find_duplicate_object(label, class_name, mx, my)
+            if duplicate is not None:
+                existing_label, distance = duplicate
+                self._merge_duplicate_object(
+                    existing_label, label, class_name, tid, mx, my, mz,
+                    distance)
+                continue
+
             self.object_dict[label] = {
                 'x': mx, 'y': my, 'z': mz,
                 'track_id': tid,
+                'last_track_id': tid,
                 'class': names[cls_id],
+                'observations': 1,
+                'aliases': [],
             }
             self._publish_object_markers()
 
@@ -1500,11 +1666,14 @@ class SemanticNavigator(Node):
         else:
             summary = []
             for i, (label, c) in enumerate(self.object_dict.items(), 1):
+                observations = int(c.get('observations', 1))
                 self.get_logger().info(
                     f'  {i}. {label:30s}'
-                    f'→ map({c["x"]:+.2f}, {c["y"]:+.2f}, z={c["z"]:+.2f})')
+                    f'→ map({c["x"]:+.2f}, {c["y"]:+.2f}, z={c["z"]:+.2f}) '
+                    f'obs={observations}')
                 summary.append(
-                    f'{label}=({c["x"]:+.2f},{c["y"]:+.2f},{c["z"]:+.2f})')
+                    f'{label}=({c["x"]:+.2f},{c["y"]:+.2f},{c["z"]:+.2f})'
+                    f' obs={observations}')
             self._publish_status('Detected objects: ' + '; '.join(summary))
         self.get_logger().info('════════════════════════════════')
 
