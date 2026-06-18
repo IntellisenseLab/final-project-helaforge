@@ -52,9 +52,9 @@ class VoiceCommander(Node):
             '║      VOICE COMMANDER READY           ║\n'
             '║                                      ║\n'
             '║  Say:                                 ║\n'
-            '║    "scan"          - start scanning   ║\n'
-            '║    "stop scan"     - stop & go home   ║\n'
-            '║    "go to chair"   - navigate to obj  ║\n'
+            '║    "scan environment" - start scan    ║\n'
+            '║    "scan stop"        - stop/go home  ║\n'
+            '║    "go to chair"      - navigate obj  ║\n'
             '║    "return home"   - go back to start ║\n'
             '║    "list"          - show objects      ║\n'
             '║    "quit" / "exit" - stop this node   ║\n'
@@ -71,6 +71,8 @@ class VoiceCommander(Node):
 
         if 'scan' in text and ('stop' in text or 'end' in text or 'finish' in text):
             cmd = 'scan stop'
+        elif 'scan environment' in text or 'scan the environment' in text:
+            cmd = 'scan'
         elif 'scan' in text:
             cmd = 'scan'
         elif 'start' in text and 'scan' in text:

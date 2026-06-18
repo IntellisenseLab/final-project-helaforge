@@ -20,26 +20,27 @@ setup(
         # config files
         (os.path.join('share', package_name, 'config'),
             glob('config/*.yaml') + glob('config/*.rviz')),
-        # URDF / xacro
-        (os.path.join('share', package_name, 'urdf'),
-            glob('urdf/*')),
-        # world files
-        (os.path.join('share', package_name, 'worlds'),
-            glob('worlds/*.sdf')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='user',
     maintainer_email='user@todo.todo',
-    description='QBot2 Semantic Robot Navigator with YOLO, SLAM, Nav2 and Voice Commands',
+    description='Kobuki+Kinect v1/libfreenect Semantic Robot Navigator: YOLO/BoT-SORT, RTAB-Map, Nav2, Voice Commands',
     license='MIT',
     entry_points={
         'console_scripts': [
             'semantic_navigator = diff_drive_robot.semantic_navigator:main',
             'voice_commander = diff_drive_robot.voice_commander:main',
             'arrow_teleop = diff_drive_robot.arrow_teleop:main',
-            'odom_to_tf = diff_drive_robot.odom_to_tf:main',
             'yolo_tracker = diff_drive_robot.yolo_tracker:main',
+            'kobuki_driver = diff_drive_robot.kobuki_driver:main',
+            'kinect_topic_bridge = diff_drive_robot.kinect_topic_bridge:main',
+            'kinect_v1_freenect_driver = diff_drive_robot.kinect_v1_freenect_driver:main',
+            'depth_preview = diff_drive_robot.depth_preview:main',
+            'kinect_depth_grid = diff_drive_robot.kinect_depth_grid:main',
+            'slam_pose_publisher = diff_drive_robot.slam_pose_publisher:main',
+            'qbot_navigation_server = diff_drive_robot.qbot_navigation_server:main',
+            'qbot_controller = diff_drive_robot.qbot_controller:main',
         ],
     },
 )

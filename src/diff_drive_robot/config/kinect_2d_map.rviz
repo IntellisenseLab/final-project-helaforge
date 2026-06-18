@@ -1,0 +1,93 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: GroundGrid
+      Enabled: true
+      Cell Size: 1
+      Plane: XY
+      Plane Cell Count: 20
+      Color: 160; 160; 160
+      Alpha: 0.45
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Frame Timeout: 15
+      Show Arrows: true
+      Show Axes: true
+      Show Names: false
+    - Class: rviz_default_plugins/Map
+      Name: KinectLiveDepthGrid
+      Enabled: true
+      Topic:
+        Value: /kinect_depth_map
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+      Update Topic:
+        Value: /map_updates
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+      Color Scheme: map
+      Alpha: 0.9
+      Draw Behind: true
+    - Class: rviz_default_plugins/Map
+      Name: RTABMap2DGrid
+      Enabled: true
+      Topic:
+        Value: /map
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+      Update Topic:
+        Value: /map_updates
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+      Color Scheme: map
+      Alpha: 0.85
+      Draw Behind: true
+    - Class: rviz_default_plugins/Odometry
+      Name: RGBDOdometry
+      Enabled: true
+      Topic:
+        Value: /odom
+        Reliability Policy: Reliable
+      Shape: Arrow
+      Keep: 100
+      Position Tolerance: 0.1
+      Angle Tolerance: 0.1
+      Color: 0; 180; 255
+    - Class: rviz_default_plugins/Image
+      Name: RGBPreview
+      Enabled: true
+      Topic:
+        Value: /camera/image_raw
+        Reliability Policy: Best Effort
+      Transport Hint: raw
+    - Class: rviz_default_plugins/Image
+      Name: DepthPreview
+      Enabled: true
+      Topic:
+        Value: /camera/depth/preview
+        Reliability Policy: Best Effort
+      Transport Hint: raw
+  Global Options:
+    Fixed Frame: base_footprint
+    Frame Rate: 30
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Name: TopDown2DMap
+      Scale: 20
+      Target Frame: map
+      X: 0
+      Y: 0
+  Window Geometry:
+    Width: 1200
+    Height: 800

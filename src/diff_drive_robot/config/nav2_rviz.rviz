@@ -24,6 +24,20 @@ Visualization Manager:
       Size (m): 0.03
       Color Transformer: FlatColor
       Color: 255; 0; 0
+    - Class: rviz_default_plugins/Image
+      Name: KinectRGB
+      Enabled: true
+      Topic:
+        Value: /camera/image_raw
+        Reliability Policy: Best Effort
+      Transport Hint: raw
+    - Class: rviz_default_plugins/Image
+      Name: KinectDepth
+      Enabled: true
+      Topic:
+        Value: /camera/depth/image_raw
+        Reliability Policy: Best Effort
+      Transport Hint: raw
     - Class: rviz_default_plugins/Map
       Name: Map
       Enabled: true
@@ -32,6 +46,15 @@ Visualization Manager:
         Durability Policy: Transient Local
       Color Scheme: map
       Alpha: 0.7
+    - Class: rviz_default_plugins/Map
+      Name: KinectLiveDepthGrid
+      Enabled: true
+      Topic:
+        Value: /kinect_depth_map
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+      Color Scheme: map
+      Alpha: 0.75
     - Class: rviz_default_plugins/Map
       Name: GlobalCostmap
       Enabled: false
@@ -63,10 +86,10 @@ Visualization Manager:
       Color: 255; 255; 0
       Line Style: Lines
     - Class: rviz_default_plugins/MarkerArray
-      Name: Waypoints
+      Name: SemanticObjects
       Enabled: true
       Topic:
-        Value: /waypoints
+        Value: /semantic_nav/object_markers
   Global Options:
     Fixed Frame: map
     Frame Rate: 30
