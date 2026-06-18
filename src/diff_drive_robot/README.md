@@ -15,6 +15,10 @@ This package is now hardware-only. The main runtime path is
 `lidar_semantic_hw.launch.py`. Kinect-based RTAB-Map mapping is no longer used
 by the main robot stack; Kinect stays in the system for RGB-D object detection.
 
+For Raspberry Pi deployment, laptop-to-Pi DDS voice setup, and report diagrams,
+see the workspace-level [README.md](../../README.md) and
+[SYSTEM_TECHNICAL_EXPLANATION.md](../../docs/SYSTEM_TECHNICAL_EXPLANATION.md).
+
 ## Runtime Concept
 
 1. `voice_commander` or manual terminal commands publish normalized commands on `/semantic_nav/command`.
@@ -283,7 +287,8 @@ source install/setup.bash
 ros2 run diff_drive_robot arrow_teleop
 ```
 
-The teleop terminal stays disabled until you say or publish `Scan Environment`.
+The teleop terminal stays disabled until you say or publish a start command such
+as `Scan Environment`, `Start Mapping Environment`, `Start Mapping`, or `Start`.
 
 ## Voice and Manual Commands
 
@@ -291,19 +296,22 @@ Spoken phrases:
 
 | Goal | Say |
 |---|---|
-| Start scan/mapping mode | `Scan Environment` |
-| Stop scan and Nav2 waypoint return | `Scan Stop` |
-| List detected objects | `List Objects` |
-| Navigate to object | `Go to chair` or `Go to chair_7` |
-| Return home | `Return Home` |
+| Start scan/mapping mode | `Scan Environment`, `Start Mapping Environment`, `Start Mapping`, `Start`, `Begin Mapping`, `Create Map` |
+| Stop scan and return home | `Scan Stop`, `Stop Mapping`, `Finish Mapping`, `Done`, `Stop` |
+| List detected objects | `List Objects`, `Show Objects`, `What Objects`, `Detected Objects` |
+| Navigate to object | `Go to chair`, `Navigate to chair`, `Drive to chair`, `Move to chair`, `Go to chair thirteen`, `Go to chair one three` |
+| Return home | `Return Home`, `Go Home`, `Come Home`, `Back Home`, `Return to Start` |
 
 Manual equivalents:
 
 ```bash
 ros2 topic pub --once /semantic_nav/command std_msgs/msg/String "{data: 'scan environment'}"
+ros2 topic pub --once /semantic_nav/command std_msgs/msg/String "{data: 'start mapping environment'}"
+ros2 topic pub --once /semantic_nav/command std_msgs/msg/String "{data: 'start'}"
 ros2 topic pub --once /semantic_nav/command std_msgs/msg/String "{data: 'scan stop'}"
+ros2 topic pub --once /semantic_nav/command std_msgs/msg/String "{data: 'done'}"
 ros2 topic pub --once /semantic_nav/command std_msgs/msg/String "{data: 'list'}"
-ros2 topic pub --once /semantic_nav/command std_msgs/msg/String "{data: 'go to chair'}"
+ros2 topic pub --once /semantic_nav/command std_msgs/msg/String "{data: 'drive to chair'}"
 ros2 topic pub --once /semantic_nav/command std_msgs/msg/String "{data: 'return home'}"
 ```
 
@@ -448,16 +456,48 @@ export VOSK_MODEL_PATH=~/vosk-model
 ros2 run diff_drive_robot voice_commander
 ```
 
+The voice node uses command grammar by default, which makes Vosk listen mostly
+for robot commands instead of free conversation. For a USB microphone, first list
+input devices:
+
+```bash
+python3 -m sounddevice
+```
+
+Then select one:
+
+```bash
+export VOICE_INPUT_DEVICE=1
+export VOSK_MODEL_PATH=~/vosk-model
+ros2 run diff_drive_robot voice_commander
+```
+
+Optional tuning:
+
+```bash
+export VOICE_COMMAND_GRAMMAR=true
+export VOICE_BLOCKSIZE=4000
+export VOICE_SAMPLE_RATE=16000
+```
+
 Say:
 
 ```text
 Scan Environment
+Start Mapping Environment
+Start Mapping
+Start
 Scan Stop
+Stop Mapping
 Return Home
 Go to chair
+Navigate to chair
+Go to chair thirteen
+Go to chair one three
 ```
 
-The echo terminal should print normalized commands such as `scan`, `scan stop`, `return home`, and `chair`.
+The echo terminal should print normalized commands such as `scan`, `scan stop`,
+`return home`, `list`, and `go to chair`.
 
 ## Project Structure
 

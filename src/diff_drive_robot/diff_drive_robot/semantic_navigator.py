@@ -27,6 +27,7 @@ Tracker parameters:
 """
 
 import math
+import re
 import time
 import threading
 import numpy as np
@@ -178,6 +179,161 @@ LIDAR_ARC_SIDE    = 60
 # once the real stream is running; they are only used for YOLO warm-up.
 DEPTH_WIDTH  = 640
 DEPTH_HEIGHT = 480
+
+START_COMMANDS = {
+    'start',
+    'scan',
+    'start scan',
+    'start scanning',
+    'scan environment',
+    'scan the environment',
+    'scan room',
+    'scan the room',
+    'scan area',
+    'map',
+    'map room',
+    'map the room',
+    'map environment',
+    'map the environment',
+    'start map',
+    'start mapping',
+    'start mapping environment',
+    'start mapping the environment',
+    'start environment mapping',
+    'begin',
+    'begin scan',
+    'begin scanning',
+    'begin mapping',
+    'begin mapping environment',
+    'begin mapping the environment',
+    'begin environment mapping',
+    'create map',
+    'create the map',
+    'explore',
+    'start exploration',
+}
+
+STOP_COMMANDS = {
+    'stop',
+    'scan stop',
+    'stop scan',
+    'stop scanning',
+    'stop mapping',
+    'stop map',
+    'finish',
+    'finish scan',
+    'finish scanning',
+    'finish mapping',
+    'end',
+    'end scan',
+    'end scanning',
+    'end mapping',
+    'complete scan',
+    'done',
+    'mapping done',
+    'scanning done',
+}
+
+HOME_COMMANDS = {
+    'return home',
+    'go home',
+    'go to home',
+    'come home',
+    'back home',
+    'go back home',
+    'go back to home',
+    'return to home',
+    'return to start',
+    'go to start',
+    'go back to start',
+    'back to start',
+    'home',
+}
+
+LIST_COMMANDS = {
+    'list',
+    'objects',
+    'list objects',
+    'show objects',
+    'show object list',
+    'show me objects',
+    'what objects',
+    'what objects did you see',
+    'detected objects',
+    'tell me objects',
+}
+
+GO_TO_PREFIXES = (
+    'go to ',
+    'go two ',
+    'go too ',
+    'go the ',
+    'go ',
+    'navigate to ',
+    'navigate ',
+    'move to ',
+    'move ',
+    'drive to ',
+    'drive ',
+    'take me to ',
+    'find ',
+)
+
+NUMBER_FILLER_WORDS = {'number', 'no'}
+DIGIT_WORDS = {
+    'zero': '0', 'one': '1', 'two': '2', 'too': '2', 'to': '2',
+    'three': '3', 'four': '4', 'for': '4', 'five': '5', 'six': '6',
+    'seven': '7', 'eight': '8', 'ate': '8', 'nine': '9',
+}
+SMALL_NUMBER_VALUES = {
+    'zero': 0, 'one': 1, 'two': 2, 'too': 2, 'to': 2, 'three': 3,
+    'four': 4, 'for': 4, 'five': 5, 'six': 6, 'seven': 7,
+    'eight': 8, 'ate': 8, 'nine': 9, 'ten': 10, 'eleven': 11,
+    'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15,
+    'sixteen': 16, 'seventeen': 17, 'eighteen': 18, 'nineteen': 19,
+}
+TENS_NUMBER_VALUES = {
+    'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50,
+    'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90,
+}
+
+
+def spoken_number_to_digits(words: list[str]) -> str | None:
+    words = [w for w in words if w not in NUMBER_FILLER_WORDS]
+    if not words:
+        return None
+    if all(w.isdigit() for w in words):
+        return ''.join(words)
+    if len(words) > 1 and all(w in DIGIT_WORDS for w in words):
+        return ''.join(DIGIT_WORDS[w] for w in words)
+
+    current = 0
+    used = False
+    for word in words:
+        if word in SMALL_NUMBER_VALUES:
+            current += SMALL_NUMBER_VALUES[word]
+            used = True
+        elif word in TENS_NUMBER_VALUES:
+            current += TENS_NUMBER_VALUES[word]
+            used = True
+        elif word == 'hundred' and used:
+            current *= 100
+        else:
+            return None
+    return str(current) if used else None
+
+
+def normalize_object_target_name(name: str) -> str:
+    words = name.split()
+    if not words:
+        return name
+    max_suffix_words = min(4, len(words) - 1)
+    for suffix_len in range(max_suffix_words, 0, -1):
+        split = len(words) - suffix_len
+        number = spoken_number_to_digits(words[split:])
+        if number is not None:
+            return ' '.join(words[:split] + [number])
+    return name
 
 
 class SemanticNavigator(Node):
@@ -896,27 +1052,26 @@ class SemanticNavigator(Node):
     # ── Command handler ────────────────────────────────────────────────────────
     def _normalize_command(self, text: str) -> str:
         cmd = text.strip().lower()
+        cmd = re.sub(r'[^a-z0-9_ ]+', ' ', cmd)
         cmd = ' '.join(cmd.replace('_', ' ').split())
 
-        if cmd in {'scan', 'start scan', 'start scanning',
-                   'scan environment', 'scan the environment',
-                   'scan room', 'map environment'}:
+        if cmd in START_COMMANDS:
             return 'scan'
-        if cmd in {'scan stop', 'stop scan', 'stop scanning',
-                   'end scan', 'finish scan', 'stop mapping'}:
+        if cmd in STOP_COMMANDS:
             return 'scan stop'
-        if cmd in {'return home', 'go home', 'come home', 'back home'}:
+        if cmd in HOME_COMMANDS:
             return 'return home'
-        if cmd in {'list', 'show objects', 'list objects',
-                   'what objects', 'detected objects'}:
+        if cmd in LIST_COMMANDS:
             return 'list'
-        if cmd.startswith('go to '):
-            return cmd[6:].strip()
-        if cmd.startswith('navigate to '):
-            return cmd[12:].strip()
+
+        for prefix in GO_TO_PREFIXES:
+            if cmd.startswith(prefix):
+                return cmd[len(prefix):].strip()
+
         return cmd
 
     def _resolve_object_target(self, cmd: str) -> tuple[str, dict] | None:
+        cmd = normalize_object_target_name(cmd)
         key = cmd.replace(' ', '_')
         if key in self.object_dict:
             return key, self.object_dict[key]
