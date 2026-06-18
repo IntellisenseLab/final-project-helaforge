@@ -140,8 +140,8 @@ def generate_launch_description():
         description='Registered camera_info topic from the Kinect RGB-D driver')
 
     yolo_model_arg = DeclareLaunchArgument(
-        'yolo_model', default_value='yolov8n.pt',
-        description='Ultralytics YOLO model path/name')
+        'yolo_model', default_value='yolo26n_ncnn_model',
+        description='Ultralytics YOLO NCNN model directory/path/name')
 
     tracker_cfg_arg = DeclareLaunchArgument(
         'tracker_cfg', default_value='botsort.yaml',

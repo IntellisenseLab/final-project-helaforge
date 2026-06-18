@@ -1,0 +1,12 @@
+# Kobuki robot base — matches ANY Kobuki unit (any serial number)
+# Works with iClebo Kobuki (FTDI FT232RL chip) — the most common variant
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", \
+  SYMLINK+="kobuki", MODE="0666", TAG+="uaccess"
+
+# Kobuki with CP2102 chip variant (some newer units)
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", \
+  ATTRS{product}=="*obuki*", SYMLINK+="kobuki", MODE="0666", TAG+="uaccess"
+
+# Kobuki with CH340 chip variant
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", \
+  ATTRS{product}=="*obuki*", SYMLINK+="kobuki", MODE="0666", TAG+="uaccess"

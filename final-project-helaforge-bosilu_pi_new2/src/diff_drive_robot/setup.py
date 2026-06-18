@@ -20,6 +20,9 @@ setup(
         # config files
         (os.path.join('share', package_name, 'config'),
             glob('config/*.yaml') + glob('config/*.rviz')),
+        # lightweight web dashboard
+        (os.path.join('share', package_name, 'web'),
+            glob('web/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -41,6 +44,7 @@ setup(
             'slam_pose_publisher = diff_drive_robot.slam_pose_publisher:main',
             'qbot_navigation_server = diff_drive_robot.qbot_navigation_server:main',
             'qbot_controller = diff_drive_robot.qbot_controller:main',
+            'web_dashboard_server = diff_drive_robot.web_dashboard_server:main',
         ],
     },
 )

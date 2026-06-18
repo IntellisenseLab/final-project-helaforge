@@ -166,14 +166,41 @@ def generate_launch_description():
         description='Kinect yaw, radians')
 
     yolo_model_arg = DeclareLaunchArgument(
-        'yolo_model', default_value='yolov8n.pt',
-        description='Ultralytics YOLO model path/name')
+        'yolo_model', default_value='yolo26n_ncnn_model',
+        description='Ultralytics YOLO NCNN model directory/path/name')
     tracker_cfg_arg = DeclareLaunchArgument(
         'tracker_cfg', default_value='botsort.yaml',
         description='Ultralytics tracker config')
+    image_topic_arg = DeclareLaunchArgument(
+        'image_topic', default_value='/camera/image_raw',
+        description='RGB image topic used by YOLO detection')
+    yolo_imgsz_arg = DeclareLaunchArgument(
+        'yolo_imgsz', default_value='640',
+        description='YOLO inference image size')
+    yolo_conf_arg = DeclareLaunchArgument(
+        'yolo_conf', default_value='0.40',
+        description='YOLO confidence threshold')
+    detection_rate_slam_arg = DeclareLaunchArgument(
+        'detection_rate_slam', default_value='3.0',
+        description='YOLO inference rate while SLAM scan is active, Hz')
+    detection_rate_navigation_arg = DeclareLaunchArgument(
+        'detection_rate_navigation', default_value='5.0',
+        description='YOLO inference rate during saved-map navigation, Hz')
+    detection_enabled_arg = DeclareLaunchArgument(
+        'detection_enabled', default_value='true',
+        description='Enable/disable YOLO detection')
+    preview_enabled_arg = DeclareLaunchArgument(
+        'preview_enabled', default_value='false',
+        description='Enable YOLO preview windows if a node supports them')
+    publish_annotated_image_arg = DeclareLaunchArgument(
+        'publish_annotated_image', default_value='false',
+        description='Publish annotated YOLO images if a node supports them')
+    save_video_arg = DeclareLaunchArgument(
+        'save_video', default_value='false',
+        description='Save YOLO debug video if a node supports it')
     every_n_arg = DeclareLaunchArgument(
         'every_n', default_value='10',
-        description='Run YOLO every N frames')
+        description='Deprecated compatibility option; detection rate is now timer based')
 
     use_rviz_arg = DeclareLaunchArgument(
         'use_rviz', default_value='true',
@@ -193,6 +220,12 @@ def generate_launch_description():
     rosbridge_port_arg = DeclareLaunchArgument(
         'rosbridge_port', default_value='9090',
         description='Rosbridge websocket port')
+    use_web_dashboard_arg = DeclareLaunchArgument(
+        'use_web_dashboard', default_value='false',
+        description='Serve the lightweight browser dashboard')
+    web_dashboard_port_arg = DeclareLaunchArgument(
+        'web_dashboard_port', default_value='8080',
+        description='HTTP port for the browser dashboard')
     qbot_linear_speed_arg = DeclareLaunchArgument(
         'qbot_linear_speed', default_value='0.10',
         description='A* controller linear speed in m/s')
@@ -205,6 +238,18 @@ def generate_launch_description():
     robot_radius_arg = DeclareLaunchArgument(
         'robot_radius', default_value='0.20',
         description='Robot body radius used when converting object clearance to base goal')
+    object_dedup_enabled_arg = DeclareLaunchArgument(
+        'object_dedup_enabled', default_value='true',
+        description='Merge repeated detections of the same object')
+    object_dedup_distance_arg = DeclareLaunchArgument(
+        'object_dedup_distance', default_value='0.30',
+        description='Map-frame XY distance used to merge same object detections')
+    object_dedup_same_class_only_arg = DeclareLaunchArgument(
+        'object_dedup_same_class_only', default_value='true',
+        description='Only merge object detections with the same YOLO class')
+    object_dedup_update_position_arg = DeclareLaunchArgument(
+        'object_dedup_update_position', default_value='true',
+        description='Average duplicate detections into the stored object position')
     object_lidar_fusion_arg = DeclareLaunchArgument(
         'object_lidar_fusion', default_value='true',
         description='Use LiDAR range to refine Kinect object distance')
@@ -260,6 +305,15 @@ def generate_launch_description():
 
     yolo_model = LaunchConfiguration('yolo_model')
     tracker_cfg = LaunchConfiguration('tracker_cfg')
+    image_topic = LaunchConfiguration('image_topic')
+    yolo_imgsz = LaunchConfiguration('yolo_imgsz')
+    yolo_conf = LaunchConfiguration('yolo_conf')
+    detection_rate_slam = LaunchConfiguration('detection_rate_slam')
+    detection_rate_navigation = LaunchConfiguration('detection_rate_navigation')
+    detection_enabled = LaunchConfiguration('detection_enabled')
+    preview_enabled = LaunchConfiguration('preview_enabled')
+    publish_annotated_image = LaunchConfiguration('publish_annotated_image')
+    save_video = LaunchConfiguration('save_video')
     every_n = LaunchConfiguration('every_n')
     use_rviz = LaunchConfiguration('use_rviz')
     use_voice = LaunchConfiguration('use_voice')
@@ -267,10 +321,18 @@ def generate_launch_description():
     use_qbot_nav = LaunchConfiguration('use_qbot_nav')
     use_rosbridge = LaunchConfiguration('use_rosbridge')
     rosbridge_port = LaunchConfiguration('rosbridge_port')
+    use_web_dashboard = LaunchConfiguration('use_web_dashboard')
+    web_dashboard_port = LaunchConfiguration('web_dashboard_port')
     qbot_linear_speed = LaunchConfiguration('qbot_linear_speed')
     qbot_max_angular_speed = LaunchConfiguration('qbot_max_angular_speed')
     object_clearance = LaunchConfiguration('object_clearance')
     robot_radius = LaunchConfiguration('robot_radius')
+    object_dedup_enabled = LaunchConfiguration('object_dedup_enabled')
+    object_dedup_distance = LaunchConfiguration('object_dedup_distance')
+    object_dedup_same_class_only = LaunchConfiguration(
+        'object_dedup_same_class_only')
+    object_dedup_update_position = LaunchConfiguration(
+        'object_dedup_update_position')
     object_lidar_fusion = LaunchConfiguration('object_lidar_fusion')
     object_lidar_window_deg = LaunchConfiguration('object_lidar_window_deg')
     object_lidar_max_delta = LaunchConfiguration('object_lidar_max_delta')
@@ -487,7 +549,7 @@ def generate_launch_description():
     )
 
     slam_lifecycle_manager = TimerAction(
-        period=5.0,
+        period=2.0,
         actions=[
             Node(
                 package='nav2_lifecycle_manager',
@@ -559,6 +621,20 @@ def generate_launch_description():
             'use_sim_time': False,
             'tracker_cfg': tracker_cfg,
             'yolo_model': yolo_model,
+            'image_topic': image_topic,
+            'yolo_imgsz': ParameterValue(yolo_imgsz, value_type=int),
+            'yolo_conf': ParameterValue(yolo_conf, value_type=float),
+            'detection_rate_slam': ParameterValue(
+                detection_rate_slam, value_type=float),
+            'detection_rate_navigation': ParameterValue(
+                detection_rate_navigation, value_type=float),
+            'detection_enabled': ParameterValue(
+                detection_enabled, value_type=bool),
+            'preview_enabled': ParameterValue(
+                preview_enabled, value_type=bool),
+            'publish_annotated_image': ParameterValue(
+                publish_annotated_image, value_type=bool),
+            'save_video': ParameterValue(save_video, value_type=bool),
             'every_n': ParameterValue(every_n, value_type=int),
             'navigation_backend': 'qbot_astar',
             'rtabmap_mode_services': False,
@@ -567,6 +643,14 @@ def generate_launch_description():
             'object_clearance': ParameterValue(
                 object_clearance, value_type=float),
             'robot_radius': ParameterValue(robot_radius, value_type=float),
+            'object_dedup_enabled': ParameterValue(
+                object_dedup_enabled, value_type=bool),
+            'object_dedup_distance': ParameterValue(
+                object_dedup_distance, value_type=float),
+            'object_dedup_same_class_only': ParameterValue(
+                object_dedup_same_class_only, value_type=bool),
+            'object_dedup_update_position': ParameterValue(
+                object_dedup_update_position, value_type=bool),
             'object_lidar_fusion': ParameterValue(
                 object_lidar_fusion, value_type=bool),
             'object_lidar_window_deg': ParameterValue(
@@ -595,6 +679,15 @@ def generate_launch_description():
             'port': ParameterValue(rosbridge_port, value_type=int),
         }],
         condition=IfCondition(use_rosbridge),
+    )
+
+    web_dashboard = Node(
+        package='diff_drive_robot',
+        executable='web_dashboard_server',
+        name='web_dashboard_server',
+        output='screen',
+        arguments=['--host', '0.0.0.0', '--port', web_dashboard_port],
+        condition=IfCondition(use_web_dashboard),
     )
 
     rviz = Node(
@@ -650,6 +743,15 @@ def generate_launch_description():
         camera_yaw_arg,
         yolo_model_arg,
         tracker_cfg_arg,
+        image_topic_arg,
+        yolo_imgsz_arg,
+        yolo_conf_arg,
+        detection_rate_slam_arg,
+        detection_rate_navigation_arg,
+        detection_enabled_arg,
+        preview_enabled_arg,
+        publish_annotated_image_arg,
+        save_video_arg,
         every_n_arg,
         use_rviz_arg,
         use_voice_arg,
@@ -657,10 +759,16 @@ def generate_launch_description():
         use_qbot_nav_arg,
         use_rosbridge_arg,
         rosbridge_port_arg,
+        use_web_dashboard_arg,
+        web_dashboard_port_arg,
         qbot_linear_speed_arg,
         qbot_max_angular_arg,
         object_clearance_arg,
         robot_radius_arg,
+        object_dedup_enabled_arg,
+        object_dedup_distance_arg,
+        object_dedup_same_class_only_arg,
+        object_dedup_update_position_arg,
         object_lidar_fusion_arg,
         object_lidar_window_arg,
         object_lidar_max_delta_arg,
@@ -683,5 +791,6 @@ def generate_launch_description():
         delayed_semantic,
         voice_commander,
         rosbridge,
+        web_dashboard,
         rviz,
     ])
