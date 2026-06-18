@@ -1,4 +1,7 @@
-.vscode
+# ROS 2 build artifacts
+build/
+install/
+log/
 
 # Python virtual environments
 venv/
@@ -10,8 +13,26 @@ env/
 __pycache__/
 *.py[cod]
 *.egg-info/
+*.egg
+.eggs/
 
-# ROS2 Python install artifacts (local)
-install/
-build/
-log/
+# YOLO model weights and exports
+*.pt
+*.onnx
+
+# Vosk model directories are too large for git
+vosk-model*/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# RViz saved backup configs
+*.rviz~

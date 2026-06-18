@@ -1,0 +1,285 @@
+cmake_minimum_required(VERSION 3.10...4.0)
+project(kinect2_bridge C CXX)
+
+cmake_policy(SET CMP0057 NEW)
+
+# Additional cmake modules
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBT_USE_DOUBLE_PRECISION -Wall")
+# Unused warnings
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wuninitialized -Winit-self -Wunused-function -Wunused-label -Wunused-variable -Wunused-but-set-variable -Wunused-but-set-parameter")
+# Additional warnings
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Warray-bounds -Wtype-limits -Wreturn-type -Wsequence-point -Wparentheses -Wmissing-braces -Wchar-subscripts -Wswitch -Wwrite-strings -Wenum-compare -Wempty-body -Wlogical-op")
+
+# Check for C++17 support
+INCLUDE(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
+IF(COMPILER_SUPPORTS_CXX17)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+ELSE()
+  MESSAGE(ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
+ENDIF()
+
+################################################################################
+# Dependencies
+################################################################################
+
+find_package(ament_cmake REQUIRED)
+find_package(compressed_depth_image_transport REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(Eigen3)
+find_package(freenect2 REQUIRED HINTS "$ENV{HOME}/freenect2")
+find_package(image_transport REQUIRED)
+find_package(kinect2_registration REQUIRED)
+find_package(LibUSB REQUIRED) # TODO: This should come from libfreenect2
+find_package(OpenCL)
+find_package(OpenCV REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(rcutils REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(TurboJPEG REQUIRED) # TODO: This should come from libfreenect2
+
+# ROS 2 Jazzy's compressed_depth_image_transport package can provide a minimal
+# CMake config without exported include/library variables. Resolve them
+# explicitly so this wrapper builds across Jazzy installations.
+find_path(compressed_depth_image_transport_INCLUDE_DIR
+  NAMES compressed_depth_image_transport/compression_common.hpp
+  PATHS ${CMAKE_PREFIX_PATH}
+  PATH_SUFFIXES include
+  REQUIRED
+)
+find_library(compressed_depth_image_transport_LIBRARY
+  NAMES compressed_depth_image_transport
+  PATHS ${CMAKE_PREFIX_PATH}
+  PATH_SUFFIXES lib
+  REQUIRED
+)
+
+################################################################################
+# Soures
+################################################################################
+
+set(KINECT2_BRIDGE_SOURCES
+  src/bridge/kinect2_bridge.cpp
+  src/utils/time_utils.cpp
+)
+
+set(KINECT2_DOWNSCALER_SOURCES
+  src/image/kinect2_downscaler.cpp
+)
+
+################################################################################
+# Libraries
+################################################################################
+
+set(KINECT2_BRIDGE_LIBRARIES
+  ${compressed_depth_image_transport_LIBRARY}
+  cv_bridge::cv_bridge
+  ${freenect2_LIBRARY}
+  kinect2_registration::kinect2_registration
+  ${LibUSB_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  pthread
+  rclcpp::rclcpp
+  rcutils::rcutils
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  tf2::tf2
+  ${TurboJPEG_LIBRARIES}
+)
+
+SET(KINECT2_DOWNSCALER_LIBRARIES
+  cv_bridge::cv_bridge
+  image_transport::image_transport
+  ${OpenCV_LIBRARIES}
+  rclcpp::rclcpp
+  rcutils::rcutils
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+)
+
+################################################################################
+# Ament dependencies
+################################################################################
+
+set(KINECT2_BRIDGE_AMENT_DEPENDS
+  compressed_depth_image_transport
+  cv_bridge
+  kinect2_registration
+  rclcpp
+  rcutils
+  sensor_msgs
+  std_msgs
+  tf2
+)
+
+set(KINECT2_DOWNSCALER_AMENT_DEPENDS
+  cv_bridge
+  image_transport
+  rclcpp
+  rcutils
+  sensor_msgs
+  std_msgs
+)
+
+################################################################################
+# Build Configuration
+################################################################################
+
+if(OpenCL_FOUND)
+  add_definitions(-DDEPTH_REG_OPENCL)
+endif()
+if(EIGEN3_FOUND)
+  add_definitions(-DDEPTH_REG_CPU)
+endif()
+
+# TODO: Modify path for target access
+add_definitions(-DK2_CALIB_PATH="${PROJECT_SOURCE_DIR}/data/")
+
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${compressed_depth_image_transport_INCLUDE_DIR}
+  ${freenect2_INCLUDE_DIRS}
+  ${kinect2_registration_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+)
+
+################################################################################
+# Nodes
+################################################################################
+
+#
+# kinect2_bridge node
+#
+
+add_executable(kinect2_bridge
+  ${KINECT2_BRIDGE_SOURCES}
+  src/cli/kinect2_bridge_node.cpp
+)
+target_link_libraries(kinect2_bridge
+  ${KINECT2_BRIDGE_LIBRARIES}
+)
+
+#
+# kinect2_downscaler node
+#
+
+add_executable(kinect2_downscaler
+  ${KINECT2_DOWNSCALER_SOURCES}
+  src/cli/kinect2_downscaler_node.cpp
+)
+target_link_libraries(kinect2_downscaler
+  ${KINECT2_DOWNSCALER_LIBRARIES}
+)
+
+################################################################################
+# Components
+################################################################################
+
+#
+# kinect2_bridge component
+#
+
+add_library(kinect2_bridge_component SHARED
+  ${KINECT2_BRIDGE_SOURCES}
+  src/components/kinect2_bridge_component.cpp
+)
+target_link_libraries(kinect2_bridge_component
+  ${KINECT2_BRIDGE_LIBRARIES}
+  rclcpp_components::component
+)
+
+# Register the component
+rclcpp_components_register_node(
+  kinect2_bridge_component
+  PLUGIN "kinect2_bridge::Kinect2BridgeComponent"
+  EXECUTABLE kinect2_bridge_component_node
+)
+
+#
+# kinect2_downscaler component
+#
+
+add_library(kinect2_downscaler_component SHARED
+  ${KINECT2_DOWNSCALER_SOURCES}
+  src/components/kinect2_downscaler_component.cpp
+)
+target_link_libraries(kinect2_downscaler_component
+  ${KINECT2_DOWNSCALER_LIBRARIES}
+  rclcpp_components::component
+)
+
+# Register the component
+rclcpp_components_register_node(
+  kinect2_downscaler_component
+  PLUGIN "kinect2_bridge::Kinect2DownscalerComponent"
+  EXECUTABLE kinect2_downscaler_component_node
+)
+
+################################################################################
+# Install
+################################################################################
+
+# Mark executables for installation
+install(
+  TARGETS
+    kinect2_bridge
+    kinect2_downscaler
+  ARCHIVE DESTINATION lib/${PROJECT_NAME}
+  LIBRARY DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+# Mark components for installation
+install(
+  TARGETS
+    kinect2_bridge_component
+    kinect2_downscaler_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib
+)
+
+# Mark cpp header files for installation
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION include/${PROJECT_NAME}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)
+
+# Install data files
+install(DIRECTORY
+  data
+  DESTINATION share/${PROJECT_NAME}
+)
+
+################################################################################
+# Testing
+################################################################################
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+
+  # Copyright and license must be present in all source files
+  set(ament_cmake_copyright_FOUND TRUE)
+
+  # The following line skips cpplint (only works in a git repo)
+  # Uncomment the line when this package is not in a git repo
+  #set(ament_cmake_cpplint_FOUND TRUE)
+
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+################################################################################
+# Declare an ament Package
+################################################################################
+
+# Export the component so that the plugin XML is generated
+ament_export_dependencies(rclcpp_components)
+
+ament_package()

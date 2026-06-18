@@ -1,0 +1,105 @@
+# rtabmap_params.yaml
+# ====================
+# RTAB-Map RGB-D SLAM parameters tuned for:
+#   Robot    : Kobuki (QBot2 chassis)
+#   Sensor   : Kinect v1/libfreenect @ 640x480 depth, registered RGB-D
+#   ROS frame: base_footprint (ground plane contact)
+#
+# Key design choices
+# ------------------
+#  Grid/FromDepth=true   -> generate 2D occupancy grid directly from Kinect
+#                          depth, no separate laser scanner required.
+#  Grid/MaxObstacleHeight=1.4 -> ignore ceiling/high returns from Kinect tilt
+#  Grid/MinGroundHeight=-0.05 -> keep the floor model stable around zero height
+#  rtabmap_sync/rgbd_sync pre-synchronizes RGB, depth and CameraInfo into
+#                          /rgbd_image, following RTAB-Map's own launch style.
+#
+# Topic remapping (done in launch file):
+#   rgb/image       <- /camera/image_raw
+#   rgb/camera_info <- /camera/camera_info
+#   depth/image     <- /camera/depth/image_raw
+
+rtabmap:
+  ros__parameters:
+    use_sim_time: false
+
+    # -- Frame IDs ------------------------------------------------------------
+    frame_id:      "base_footprint"
+    odom_frame_id: "odom"
+    map_frame_id:  "map"
+
+    # -- Input mode -----------------------------------------------------------
+    # RTAB-Map consumes a synchronized RGBDImage from rtabmap_sync/rgbd_sync.
+    # The raw RGB/depth topics are still available for previews, Nav2 /scan,
+    # YOLO and semantic object mapping.
+    subscribe_rgbd:  true
+    subscribe_depth: false
+    subscribe_rgb:   false
+    subscribe_scan:  false    # no dedicated laser; depth→grid used instead
+
+    # Synchronization is handled by /rgbd_sync before RTAB-Map.
+    approx_sync: false
+
+    # -- Occupancy Grid from Depth -------------------------------------------
+    # This replaces the need for depthimage_to_laserscan.
+    # RTAB-Map projects the depth point cloud into a 2D grid published on /map.
+    Grid/FromDepth:                  "true"
+    Grid/RangeMin:                   "0.50"  # Kinect v1 near range is noisy
+    Grid/RangeMax:                   "3.50"  # far Kinect v1 depth is noisy
+    Grid/DepthDecimation:            "4"
+    Grid/MaxObstacleHeight:          "1.40"  # ignore ceiling/high returns
+    Grid/MinGroundHeight:            "-0.05"
+    Grid/MaxGroundHeight:            "0.08"
+    Grid/NormalsSegmentation:        "false" # more stable for a level mobile base
+    Grid/NoiseFilteringRadius:       "0.10"
+    Grid/NoiseFilteringMinNeighbors: "2"
+    Grid/ClusterRadius:              "0.12"
+    Grid/MinClusterSize:             "10"
+    Grid/RayTracing:                 "true"  # ray-cast to clear free space
+    Grid/CellSize:                   "0.07"  # less speckle than 5 cm on Kinect v1
+    Grid/3D:                         "false" # produce 2D occupancy grid for Nav2
+
+    # -- SLAM / Loop Closure --------------------------------------------------
+    Mem/IncrementalMemory:         "true"   # online SLAM mode (not localization-only)
+    Mem/InitWMWithAllNodes:        "false"
+    Rtabmap/DetectionRate:         "1"      # loop closure detection: 1 Hz
+    Rtabmap/TimeThr:               "0"      # no time limit per iteration
+    Rtabmap/MemoryThr:             "0"      # no memory limit
+
+    # Keep the graph planar. Without this, RGB-D noise can make the robot pose
+    # look like it is drifting/tilting around the map in RViz.
+    Reg/Force3DoF:             "true"
+    Optimizer/Slam2D:          "true"
+    RGBD/LinearUpdate:         "0.10"
+    RGBD/AngularUpdate:        "0.10"
+    RGBD/OptimizeFromGraphEnd: "true"
+    RGBD/ProximityBySpace:     "true"
+
+    # Visual feature extraction (ORB is fast on ARM/low-power CPUs)
+    Kp/DetectorStrategy: "9"
+    Vis/FeatureType:     "9"    # 9 = ORB
+    Vis/MaxFeatures:     "600"
+    Vis/MinInliers:      "15"
+
+    # -- RGBD odometry (visual odometry as a fallback supplement to wheel odom)
+    # We use wheel odometry (kobuki_driver) as primary. RTAB-Map uses it via
+    # odom_frame_id. Setting Odom/Strategy="0" disables RTAB-Map's own VO.
+    Odom/Strategy:  "0"   # 0 = Frame-To-Map (less drift than Frame-to-Frame)
+
+    # -- RTAB-Map database ----------------------------------------------------
+    # Default: ~/.ros/rtabmap.db  (auto-saved on every loop iteration)
+    # Override at launch with: --ros-args -p database_path:=/path/to/map.db
+    database_path: "~/.ros/rtabmap.db"
+
+    # -- QoS for real hardware (best-effort Kinect topics) --------------------
+    qos_image:         1   # 1 = BEST_EFFORT
+    qos_camera_info:   1
+
+rtabmap_viz:
+  ros__parameters:
+    use_sim_time: false
+    frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    subscribe_depth: true
+    subscribe_rgb:   true
+    approx_sync:     true
